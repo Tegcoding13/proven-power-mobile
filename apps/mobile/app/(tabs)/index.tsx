@@ -16,7 +16,7 @@ export default function HomeScreen() {
           Welcome{profile?.full_name ? `, ${profile.full_name}` : ""}.
         </Text>
         <Text style={{ fontSize: typeScale.sm, color: colors.gray[700] }}>
-          My Garage, Service, Parts, and Messages land here in upcoming milestones.
+          Use the tabs below for My Garage, Service, Parts, and Messages.
         </Text>
 
         <Pressable

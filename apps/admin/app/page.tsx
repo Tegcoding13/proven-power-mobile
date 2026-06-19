@@ -23,12 +23,23 @@ export default async function StaffHomePage() {
         {staffRole?.department ? ` (${staffRole.department})` : ""}.
       </p>
       <p className="max-w-md text-sm text-gray-700">
-        Service/parts queues, message inbox, and promotions tools land here in upcoming milestones.
+        Promotions and analytics tools land here in upcoming milestones.
       </p>
 
-      <Link href="/notifications" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
-        Notification Rules
-      </Link>
+      <div className="flex flex-wrap justify-center gap-3">
+        <Link href="/service" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
+          Service Queue
+        </Link>
+        <Link href="/parts" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
+          Parts Queue
+        </Link>
+        <Link href="/messages" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
+          Message Inbox
+        </Link>
+        <Link href="/notifications" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
+          Notification Rules
+        </Link>
+      </div>
 
       <form action={logOut}>
         <button type="submit" className="min-h-12 rounded-lg bg-gray-100 px-6 font-semibold text-black">

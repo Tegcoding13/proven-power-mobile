@@ -28,6 +28,30 @@ export type NotificationCategory =
   | "recall";
 export type NotificationChannel = "push" | "sms" | "email";
 export type DeviceType = "ios" | "android" | "web";
+export type ServiceRequestType = "drop_off" | "pickup_delivery" | "field_service" | "loaner_request";
+export type ServiceRequestStatus =
+  | "submitted"
+  | "acknowledged"
+  | "scheduled"
+  | "in_progress"
+  | "awaiting_approval"
+  | "approved"
+  | "completed"
+  | "cancelled";
+export type ServiceRequestMediaType = "photo" | "video";
+export type PartsRequestType = "stock_check" | "part_order" | "broken_part_id";
+export type PartsRequestStatus =
+  | "submitted"
+  | "researching"
+  | "in_stock"
+  | "ordered"
+  | "ready_for_pickup"
+  | "fulfilled"
+  | "cancelled";
+export type MessageDepartment = "sales" | "parts" | "service" | "office";
+export type MessageThreadStatus = "open" | "closed";
+export type MessageSenderType = "customer" | "staff";
+export type MessageAttachmentType = "photo" | "video" | "document";
 
 export interface NotificationPrefs {
   push_enabled: boolean;
@@ -449,6 +473,210 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["notification_rules"]["Insert"]>;
         Relationships: [];
       };
+      service_requests: {
+        Row: {
+          id: string;
+          business_account_id: string;
+          equipment_id: string;
+          requested_by_profile_id: string | null;
+          dealership_location_id: string | null;
+          request_type: ServiceRequestType;
+          description: string;
+          gps_lat: number | null;
+          gps_lng: number | null;
+          preferred_date: string | null;
+          status: ServiceRequestStatus;
+          assigned_staff_profile_id: string | null;
+          estimate_amount: number | null;
+          estimate_approved_at: string | null;
+          estimate_approved_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_account_id: string;
+          equipment_id: string;
+          requested_by_profile_id?: string | null;
+          dealership_location_id?: string | null;
+          request_type?: ServiceRequestType;
+          description: string;
+          gps_lat?: number | null;
+          gps_lng?: number | null;
+          preferred_date?: string | null;
+          status?: ServiceRequestStatus;
+          assigned_staff_profile_id?: string | null;
+          estimate_amount?: number | null;
+          estimate_approved_at?: string | null;
+          estimate_approved_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["service_requests"]["Insert"]>;
+        Relationships: [];
+      };
+      service_request_media: {
+        Row: {
+          id: string;
+          service_request_id: string;
+          media_type: ServiceRequestMediaType;
+          storage_path: string;
+          uploaded_by_profile_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          service_request_id: string;
+          media_type: ServiceRequestMediaType;
+          storage_path: string;
+          uploaded_by_profile_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["service_request_media"]["Insert"]>;
+        Relationships: [];
+      };
+      service_request_status_history: {
+        Row: {
+          id: string;
+          service_request_id: string;
+          status: string;
+          note: string | null;
+          changed_by_profile_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          service_request_id: string;
+          status: string;
+          note?: string | null;
+          changed_by_profile_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["service_request_status_history"]["Insert"]>;
+        Relationships: [];
+      };
+      parts_requests: {
+        Row: {
+          id: string;
+          business_account_id: string;
+          equipment_id: string | null;
+          requested_by_profile_id: string | null;
+          dealership_location_id: string | null;
+          request_type: PartsRequestType;
+          description: string;
+          status: PartsRequestStatus;
+          assigned_staff_profile_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_account_id: string;
+          equipment_id?: string | null;
+          requested_by_profile_id?: string | null;
+          dealership_location_id?: string | null;
+          request_type?: PartsRequestType;
+          description: string;
+          status?: PartsRequestStatus;
+          assigned_staff_profile_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["parts_requests"]["Insert"]>;
+        Relationships: [];
+      };
+      parts_request_media: {
+        Row: {
+          id: string;
+          parts_request_id: string;
+          storage_path: string;
+          uploaded_by_profile_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          parts_request_id: string;
+          storage_path: string;
+          uploaded_by_profile_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["parts_request_media"]["Insert"]>;
+        Relationships: [];
+      };
+      message_threads: {
+        Row: {
+          id: string;
+          business_account_id: string;
+          department: MessageDepartment;
+          subject: string | null;
+          related_service_request_id: string | null;
+          related_parts_request_id: string | null;
+          assigned_staff_profile_id: string | null;
+          status: MessageThreadStatus;
+          last_message_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_account_id: string;
+          department: MessageDepartment;
+          subject?: string | null;
+          related_service_request_id?: string | null;
+          related_parts_request_id?: string | null;
+          assigned_staff_profile_id?: string | null;
+          status?: MessageThreadStatus;
+        };
+        Update: Partial<Database["public"]["Tables"]["message_threads"]["Insert"]>;
+        Relationships: [];
+      };
+      messages: {
+        Row: {
+          id: string;
+          thread_id: string;
+          sender_profile_id: string | null;
+          sender_type: MessageSenderType;
+          body: string | null;
+          is_quote: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          thread_id: string;
+          sender_profile_id?: string | null;
+          sender_type: MessageSenderType;
+          body?: string | null;
+          is_quote?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["messages"]["Insert"]>;
+        Relationships: [];
+      };
+      message_attachments: {
+        Row: {
+          id: string;
+          message_id: string;
+          storage_path: string;
+          file_name: string;
+          media_type: MessageAttachmentType;
+        };
+        Insert: {
+          id?: string;
+          message_id: string;
+          storage_path: string;
+          file_name: string;
+          media_type: MessageAttachmentType;
+        };
+        Update: Partial<Database["public"]["Tables"]["message_attachments"]["Insert"]>;
+        Relationships: [];
+      };
+      message_read_receipts: {
+        Row: {
+          id: string;
+          message_id: string;
+          profile_id: string;
+          read_at: string;
+        };
+        Insert: {
+          id?: string;
+          message_id: string;
+          profile_id: string;
+          read_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["message_read_receipts"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -482,3 +710,12 @@ export type MaintenanceScheduleTemplate = Database["public"]["Tables"]["maintena
 export type MaintenanceTask = Database["public"]["Tables"]["maintenance_tasks"]["Row"];
 export type PushToken = Database["public"]["Tables"]["push_tokens"]["Row"];
 export type NotificationRule = Database["public"]["Tables"]["notification_rules"]["Row"];
+export type ServiceRequest = Database["public"]["Tables"]["service_requests"]["Row"];
+export type ServiceRequestMedia = Database["public"]["Tables"]["service_request_media"]["Row"];
+export type ServiceRequestStatusHistory = Database["public"]["Tables"]["service_request_status_history"]["Row"];
+export type PartsRequest = Database["public"]["Tables"]["parts_requests"]["Row"];
+export type PartsRequestMedia = Database["public"]["Tables"]["parts_request_media"]["Row"];
+export type MessageThread = Database["public"]["Tables"]["message_threads"]["Row"];
+export type Message = Database["public"]["Tables"]["messages"]["Row"];
+export type MessageAttachment = Database["public"]["Tables"]["message_attachments"]["Row"];
+export type MessageReadReceipt = Database["public"]["Tables"]["message_read_receipts"]["Row"];
