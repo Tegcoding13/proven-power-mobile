@@ -52,6 +52,9 @@ export type MessageDepartment = "sales" | "parts" | "service" | "office";
 export type MessageThreadStatus = "open" | "closed";
 export type MessageSenderType = "customer" | "staff";
 export type MessageAttachmentType = "photo" | "video" | "document";
+export type InventoryCondition = "new" | "used";
+export type InventoryStatus = "available" | "pending" | "sold";
+export type WinterStorageStatus = "requested" | "confirmed" | "dropped_off" | "stored" | "picked_up" | "cancelled";
 
 export interface NotificationPrefs {
   push_enabled: boolean;
@@ -677,6 +680,112 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["message_read_receipts"]["Insert"]>;
         Relationships: [];
       };
+      inventory_listings: {
+        Row: {
+          id: string;
+          dealership_location_id: string | null;
+          category: EquipmentCategory;
+          make: string;
+          model: string;
+          model_year: number | null;
+          title: string;
+          description: string | null;
+          price: number | null;
+          condition: InventoryCondition;
+          status: InventoryStatus;
+          stock_number: string | null;
+          external_source: string | null;
+          external_id: string | null;
+          created_by_profile_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          dealership_location_id?: string | null;
+          category?: EquipmentCategory;
+          make?: string;
+          model: string;
+          model_year?: number | null;
+          title: string;
+          description?: string | null;
+          price?: number | null;
+          condition?: InventoryCondition;
+          status?: InventoryStatus;
+          stock_number?: string | null;
+          external_source?: string | null;
+          external_id?: string | null;
+          created_by_profile_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["inventory_listings"]["Insert"]>;
+        Relationships: [];
+      };
+      inventory_listing_photos: {
+        Row: {
+          id: string;
+          listing_id: string;
+          storage_path: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          listing_id: string;
+          storage_path: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["inventory_listing_photos"]["Insert"]>;
+        Relationships: [];
+      };
+      winter_storage_signups: {
+        Row: {
+          id: string;
+          business_account_id: string;
+          equipment_id: string;
+          zone_id: string | null;
+          season_window_id: string | null;
+          requested_dropoff_date: string | null;
+          requested_pickup_date: string | null;
+          winterization_bundle_added: boolean;
+          agreement_signed_at: string | null;
+          status: WinterStorageStatus;
+          dropoff_condition_notes: string | null;
+          requested_by_profile_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_account_id: string;
+          equipment_id: string;
+          zone_id?: string | null;
+          season_window_id?: string | null;
+          requested_dropoff_date?: string | null;
+          requested_pickup_date?: string | null;
+          winterization_bundle_added?: boolean;
+          agreement_signed_at?: string | null;
+          status?: WinterStorageStatus;
+          dropoff_condition_notes?: string | null;
+          requested_by_profile_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["winter_storage_signups"]["Insert"]>;
+        Relationships: [];
+      };
+      winter_storage_checkin_photos: {
+        Row: {
+          id: string;
+          signup_id: string;
+          storage_path: string;
+          uploaded_by_profile_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          signup_id: string;
+          storage_path: string;
+          uploaded_by_profile_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["winter_storage_checkin_photos"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -719,3 +828,7 @@ export type MessageThread = Database["public"]["Tables"]["message_threads"]["Row
 export type Message = Database["public"]["Tables"]["messages"]["Row"];
 export type MessageAttachment = Database["public"]["Tables"]["message_attachments"]["Row"];
 export type MessageReadReceipt = Database["public"]["Tables"]["message_read_receipts"]["Row"];
+export type InventoryListing = Database["public"]["Tables"]["inventory_listings"]["Row"];
+export type InventoryListingPhoto = Database["public"]["Tables"]["inventory_listing_photos"]["Row"];
+export type WinterStorageSignup = Database["public"]["Tables"]["winter_storage_signups"]["Row"];
+export type WinterStorageCheckinPhoto = Database["public"]["Tables"]["winter_storage_checkin_photos"]["Row"];

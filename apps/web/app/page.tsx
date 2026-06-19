@@ -11,23 +11,34 @@ export default async function HomePage() {
     ? await supabase.from("profiles").select("*").eq("id", userId).single()
     : { data: null };
 
+  const tiles = [
+    { href: "/garage", label: "My Garage", icon: "🚜" },
+    { href: "/service", label: "Service", icon: "🔧" },
+    { href: "/parts", label: "Parts", icon: "⚙️" },
+    { href: "/messages", label: "Messages", icon: "💬" },
+    { href: "/inventory", label: "Inventory", icon: "📋" },
+    { href: "/winter-storage", label: "Winter Storage", icon: "❄️" },
+    { href: "/locations", label: "Locations", icon: "📍" },
+  ];
+
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="text-3xl font-bold text-green-700">Proven Power</h1>
-      <p className="text-lg text-black">Welcome{profile?.full_name ? `, ${profile.full_name}` : ""}.</p>
-      <div className="flex flex-wrap justify-center gap-3">
-        <Link href="/garage" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
-          My Garage
-        </Link>
-        <Link href="/service" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
-          Service
-        </Link>
-        <Link href="/parts" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
-          Parts
-        </Link>
-        <Link href="/messages" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
-          Messages
-        </Link>
+    <div className="flex flex-1 flex-col items-center gap-6 px-4 py-8 text-center">
+      <div>
+        <h1 className="text-3xl font-bold text-green-700">Proven Power</h1>
+        <p className="text-lg text-black">Welcome{profile?.full_name ? `, ${profile.full_name}` : ""}.</p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 max-w-md w-full">
+        {tiles.map((tile) => (
+          <Link
+            key={tile.href}
+            href={tile.href}
+            className="aspect-square flex flex-col items-center justify-center gap-2 rounded-lg border border-gray-300 p-2 hover:bg-green-50"
+          >
+            <span className="text-3xl">{tile.icon}</span>
+            <span className="text-xs font-semibold text-black text-center">{tile.label}</span>
+          </Link>
+        ))}
       </div>
 
       <form action={logOut}>
