@@ -1,0 +1,14 @@
+{
+  "name": "@proven-power/supabase-client",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
+    "@proven-power/shared-types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

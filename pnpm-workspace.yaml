@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Expo/Metro has known issues with pnpm's default isolated node_modules layout.
+# Hoisted linking is Expo's documented workaround for monorepos.
+nodeLinker: hoisted
