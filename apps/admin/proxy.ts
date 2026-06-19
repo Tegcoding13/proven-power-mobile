@@ -42,7 +42,11 @@ export async function proxy(request: NextRequest) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("error", "not_staff");
-    return NextResponse.redirect(loginUrl);
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    // signOut()'s setAll callback cleared the session cookies onto `response` above —
+    // carry those over, otherwise the browser keeps the stale cookie and this loops forever.
+    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+    return redirectResponse;
   }
 
   if (isPublicPath) {
