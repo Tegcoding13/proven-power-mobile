@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { Equipment, EquipmentHourReading, EquipmentDocument, MaintenanceTask } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 import { useBusinessAccount } from "../../../lib/business-account";
@@ -161,6 +162,9 @@ export default function EquipmentDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
+      <Link href="/garage" className="text-sm text-green-700">
+        ← Back to My Garage
+      </Link>
       <div>
         <h1 className="text-2xl font-bold text-black">
           {equipment.nickname || `${equipment.model_year ?? ""} ${equipment.model}`.trim()}

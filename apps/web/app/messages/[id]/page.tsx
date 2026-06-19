@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { Message, MessageAttachment } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 import { useBusinessAccount } from "../../../lib/business-account";
@@ -129,6 +130,9 @@ export default function ThreadDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="flex flex-1 flex-col max-w-2xl mx-auto w-full px-4 py-8">
+      <Link href="/messages" className="text-sm text-green-700 mb-4">
+        ← Back to Messages
+      </Link>
       <div className="flex flex-1 flex-col gap-3 mb-4">
         {messages.map((m) => {
           const isMine = m.sender_type === "customer";

@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type {
   ServiceRequest,
   ServiceRequestStatus,
@@ -133,6 +134,9 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
+      <Link href="/service" className="text-sm text-green-700">
+        ← Back to Service Queue
+      </Link>
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-black">{account?.name ?? "Customer"}</h1>
         <p className="text-gray-700">{equipment?.nickname || equipment?.model}</p>

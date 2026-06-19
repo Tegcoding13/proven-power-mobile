@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { Message, MessageAttachment, MessageThread, BusinessAccount } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 import { uploadMessageAttachment, getSignedMessageAttachmentUrl } from "../../../lib/message-attachments";
@@ -145,6 +146,9 @@ export default function AdminThreadDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="flex flex-1 flex-col max-w-2xl mx-auto w-full px-4 py-8">
+      <Link href="/messages" className="text-sm text-green-700 mb-4">
+        ← Back to Message Inbox
+      </Link>
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold text-black">{account?.name ?? "Customer"}</h1>

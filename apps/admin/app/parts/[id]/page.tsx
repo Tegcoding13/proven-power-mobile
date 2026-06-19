@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { PartsRequest, PartsRequestStatus, BusinessAccount } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 import { getSignedPartsRequestMediaUrl } from "../../../lib/parts-request-media";
@@ -80,6 +81,9 @@ export default function AdminPartsRequestDetailPage({ params }: { params: Promis
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
+      <Link href="/parts" className="text-sm text-green-700">
+        ← Back to Parts Queue
+      </Link>
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-black">{account?.name ?? "Customer"}</h1>
         <StatusBadge status={request.status} />
