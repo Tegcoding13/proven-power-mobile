@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Switch } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { colors, spacing, radii, typeScale, minTouchTarget } from "@proven-power/ui-tokens";
 import type { Equipment, StorageSeasonWindow } from "@proven-power/shared-types";
@@ -20,7 +20,6 @@ export default function NewWinterStorageSignupScreen() {
   const [zoneId, setZoneId] = useState<string | null>(null);
   const [isLookingUpZone, setIsLookingUpZone] = useState(false);
   const [zoneError, setZoneError] = useState<string | null>(null);
-  const [bundleAdded, setBundleAdded] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,7 +85,6 @@ export default function NewWinterStorageSignupScreen() {
       equipment_id: equipmentId,
       zone_id: zoneId,
       season_window_id: seasonWindowId,
-      winterization_bundle_added: bundleAdded,
       agreement_signed_at: new Date().toISOString(),
       requested_by_profile_id: session.user.id,
     });
@@ -191,11 +189,6 @@ export default function NewWinterStorageSignupScreen() {
           ))}
         </>
       ) : null}
-
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm }}>
-        <Text style={{ fontSize: typeScale.base, color: colors.black, flex: 1 }}>Add winterization service bundle</Text>
-        <Switch value={bundleAdded} onValueChange={setBundleAdded} trackColor={{ true: colors.green[500] }} />
-      </View>
 
       <Pressable
         onPress={() => setAgreed((prev) => !prev)}

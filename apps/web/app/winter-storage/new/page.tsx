@@ -19,7 +19,6 @@ export default function NewWinterStorageSignupPage() {
   const [seasonWindowId, setSeasonWindowId] = useState<string>("");
   const [isLookingUpZone, setIsLookingUpZone] = useState(false);
   const [zoneError, setZoneError] = useState<string | null>(null);
-  const [bundleAdded, setBundleAdded] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,7 +94,6 @@ export default function NewWinterStorageSignupPage() {
       equipment_id: equipmentId,
       zone_id: zoneId,
       season_window_id: seasonWindowId,
-      winterization_bundle_added: bundleAdded,
       agreement_signed_at: new Date().toISOString(),
       requested_by_profile_id: userData.user.id,
     });
@@ -176,11 +174,6 @@ export default function NewWinterStorageSignupPage() {
             </div>
           </div>
         ) : null}
-
-        <label className="flex items-center gap-2 text-black">
-          <input type="checkbox" checked={bundleAdded} onChange={(e) => setBundleAdded(e.target.checked)} className="accent-green-600 w-5 h-5" />
-          Add winterization service bundle
-        </label>
 
         <label className="flex items-start gap-2 text-black text-sm">
           <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="accent-green-600 w-5 h-5 mt-0.5" />

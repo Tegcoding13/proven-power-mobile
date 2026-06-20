@@ -73,8 +73,7 @@ export default function AdminWinterStorageQueuePage() {
                 {s.accountName} — {s.equipmentLabel}
               </p>
               <p className="text-sm text-gray-700">
-                {s.winterization_bundle_added ? "Winterization bundle added" : "No winterization bundle"}
-                {s.agreement_signed_at ? " · Agreement signed" : " · Agreement not signed"}
+                {s.agreement_signed_at ? "Agreement signed" : "Agreement not signed"}
               </p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {STATUSES.map((status) => (
