@@ -11,8 +11,6 @@ import { uploadServiceRequestMedia } from "../../../lib/service-request-media";
 const REQUEST_TYPES: { value: ServiceRequestType; label: string }[] = [
   { value: "drop_off", label: "Drop Off" },
   { value: "pickup_delivery", label: "Pickup & Delivery" },
-  { value: "field_service", label: "Field Service" },
-  { value: "loaner_request", label: "Loaner Request" },
 ];
 
 export default function NewServiceRequestPage() {
