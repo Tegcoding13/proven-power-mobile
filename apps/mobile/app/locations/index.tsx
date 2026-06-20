@@ -14,6 +14,14 @@ const DAY_LABELS: { key: keyof DealershipHours; label: string }[] = [
   { key: "sunday", label: "Sun" },
 ];
 
+function formatTime12Hour(time24: string): string {
+  const [hourStr, minute] = time24.split(":");
+  const hour = Number(hourStr);
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${minute} ${period}`;
+}
+
 export default function LocationsScreen() {
   const [locations, setLocations] = useState<DealershipLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,7 +86,7 @@ export default function LocationsScreen() {
                   <View key={key} style={{ flexDirection: "row", justifyContent: "space-between" }}>
                     <Text style={{ fontSize: typeScale.xs, color: colors.gray[700] }}>{label}</Text>
                     <Text style={{ fontSize: typeScale.xs, color: colors.gray[700] }}>
-                      {day ? `${day.open} – ${day.close}` : "Closed"}
+                      {day ? `${formatTime12Hour(day.open)} – ${formatTime12Hour(day.close)}` : "Closed"}
                     </Text>
                   </View>
                 );

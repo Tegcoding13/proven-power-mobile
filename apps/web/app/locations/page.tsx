@@ -15,6 +15,14 @@ const DAY_LABELS: { key: keyof DealershipHours; label: string }[] = [
   { key: "sunday", label: "Sun" },
 ];
 
+function formatTime12Hour(time24: string): string {
+  const [hourStr, minute] = time24.split(":");
+  const hour = Number(hourStr);
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${minute} ${period}`;
+}
+
 export default function LocationsPage() {
   const [locations, setLocations] = useState<DealershipLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +41,9 @@ export default function LocationsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
+      <Link href="/" className="text-sm text-green-700">
+        ← Back home
+      </Link>
       <h1 className="text-2xl font-bold text-green-700">Locations &amp; Contact</h1>
 
       {isLoading ? (
@@ -73,7 +84,7 @@ export default function LocationsPage() {
                     return (
                       <div key={key} className="flex justify-between text-xs text-gray-700">
                         <span>{label}</span>
-                        <span>{day ? `${day.open} – ${day.close}` : "Closed"}</span>
+                        <span>{day ? `${formatTime12Hour(day.open)} – ${formatTime12Hour(day.close)}` : "Closed"}</span>
                       </div>
                     );
                   })}
@@ -83,10 +94,6 @@ export default function LocationsPage() {
           ))}
         </div>
       )}
-
-      <Link href="/" className="text-sm text-green-700">
-        ← Back home
-      </Link>
     </div>
   );
 }

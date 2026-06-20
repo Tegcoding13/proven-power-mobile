@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Equipment, PartsRequestType } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
@@ -89,6 +90,9 @@ export default function NewPartsRequestPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 px-4 py-8 max-w-md mx-auto w-full">
+      <Link href="/parts" className="text-sm text-green-700">
+        ← Back to Parts
+      </Link>
       <h1 className="text-2xl font-bold text-green-700">Request Parts</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -36,6 +36,9 @@ export default function InventoryListPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
+      <Link href="/" className="text-sm text-green-700">
+        ← Back home
+      </Link>
       <h1 className="text-2xl font-bold text-green-700">Inventory</h1>
 
       {isLoading ? (
@@ -63,10 +66,6 @@ export default function InventoryListPage() {
           ))}
         </ul>
       )}
-
-      <Link href="/" className="text-sm text-green-700">
-        ← Back home
-      </Link>
     </div>
   );
 }

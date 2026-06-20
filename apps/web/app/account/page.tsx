@@ -25,6 +25,9 @@ export default async function AccountPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-md mx-auto w-full">
+      <Link href="/" className="text-sm text-green-700">
+        ← Back home
+      </Link>
       <div className="flex flex-col items-center gap-2 py-4">
         <div className="w-20 h-20 rounded-full bg-green-600 flex items-center justify-center text-white text-2xl font-bold">
           {initials(profile?.full_name)}
@@ -63,10 +66,6 @@ export default async function AccountPage() {
           Sign Out
         </button>
       </form>
-
-      <Link href="/" className="text-sm text-green-700 text-center">
-        ← Back home
-      </Link>
     </div>
   );
 }

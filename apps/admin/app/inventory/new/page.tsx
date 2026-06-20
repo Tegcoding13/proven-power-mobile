@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { EquipmentCategory } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
@@ -62,6 +63,9 @@ export default function NewInventoryListingPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 px-4 py-8 max-w-md mx-auto w-full">
+      <Link href="/inventory" className="text-sm text-green-700">
+        ← Back to Inventory
+      </Link>
       <h1 className="text-2xl font-bold text-green-700">Add Inventory Listing</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">

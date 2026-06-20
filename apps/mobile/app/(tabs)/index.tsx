@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, Pressable, ScrollView, FlatList, Alert } from "react-native";
+import { View, Text, Pressable, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,15 +19,15 @@ type Route =
   | "/winter-storage"
   | "/locations";
 
-const QUICK_ACTIONS: { href: Route; label: string; subtitle: string; icon: string }[] = [
-  { href: "/garage", label: "My Equipment", subtitle: "Manage your garage", icon: "🚜" },
-  { href: "/service/new", label: "Schedule Service", subtitle: "Request service", icon: "🔧" },
-  { href: "/parts", label: "Parts Store", subtitle: "Order parts", icon: "🛒" },
-  { href: "/messages", label: "Messages", subtitle: "Talk to us", icon: "💬" },
-  { href: "/service", label: "Service History", subtitle: "Past & active", icon: "📋" },
-  { href: "/winter-storage", label: "Winter Storage", subtitle: "Sign up", icon: "❄️" },
-  { href: "/locations", label: "Locations", subtitle: "Hours & contact", icon: "📍" },
-  { href: "/inventory", label: "Inventory", subtitle: "New & used units", icon: "📦" },
+const QUICK_ACTIONS: { href: Route; label: string; icon: string }[] = [
+  { href: "/garage", label: "Equipment", icon: "🚜" },
+  { href: "/service/new", label: "Service", icon: "🔧" },
+  { href: "/parts", label: "Parts", icon: "🛒" },
+  { href: "/messages", label: "Messages", icon: "💬" },
+  { href: "/winter-storage", label: "Storage", icon: "❄️" },
+  { href: "/locations", label: "Locations", icon: "📍" },
+  { href: "/inventory", label: "Inventory", icon: "📦" },
+  { href: "/service", label: "History", icon: "📋" },
 ];
 
 function initials(name?: string | null): string {
@@ -87,7 +87,7 @@ export default function HomeScreen() {
       }
     }
 
-    const { data: promoRows } = await supabase.from("promotions").select("*").order("starts_at", { ascending: false }).limit(5);
+    const { data: promoRows } = await supabase.from("promotions").select("*").order("starts_at", { ascending: false }).limit(3);
     setPromotions(promoRows ?? []);
   }, [businessAccount]);
 
@@ -99,39 +99,36 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.gray[50] }}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <LinearGradient colors={gradients.hero} style={{ paddingBottom: spacing.xl }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <LinearGradient colors={gradients.hero} style={{ paddingBottom: spacing.md }}>
           <SafeAreaView edges={["top"]}>
-            <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+            <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
                 <View
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
                     backgroundColor: "rgba(255,255,255,0.2)",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <Text style={{ color: colors.white, fontWeight: "700" }}>{initials(profile?.full_name)}</Text>
+                  <Text style={{ color: colors.white, fontWeight: "700", fontSize: typeScale.sm }}>{initials(profile?.full_name)}</Text>
                 </View>
-                <View>
-                  <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: typeScale.sm }}>Welcome</Text>
-                  <Text style={{ color: colors.white, fontSize: typeScale.xl, fontWeight: "700" }}>
-                    {profile?.full_name?.split(" ")[0] ?? "there"} 👋
-                  </Text>
-                </View>
+                <Text style={{ color: colors.white, fontSize: typeScale.lg, fontWeight: "700" }}>
+                  Hi, {profile?.full_name?.split(" ")[0] ?? "there"} 👋
+                </Text>
               </View>
               <Pressable
                 onPress={() => Alert.alert("Notifications", "Push notifications are coming soon.")}
-                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}
+                style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}
               >
-                <Text style={{ fontSize: typeScale.lg }}>🔔</Text>
+                <Text style={{ fontSize: typeScale.base }}>🔔</Text>
               </Pressable>
             </View>
 
-            <View style={{ flexDirection: "row", gap: spacing.sm, paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
+            <View style={{ flexDirection: "row", gap: spacing.sm, paddingHorizontal: spacing.lg, marginTop: spacing.sm }}>
               <StatPill label="Equipment" value={equipmentCount != null ? String(equipmentCount) : "–"} />
               <StatPill label="Active Service" value={activeServiceCount != null ? String(activeServiceCount) : "–"} />
               <StatPill label="Rewards" value="Soon" muted />
@@ -139,98 +136,72 @@ export default function HomeScreen() {
           </SafeAreaView>
         </LinearGradient>
 
-        <View style={{ padding: spacing.lg, gap: spacing.lg, marginTop: -spacing.lg }}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.md }}>
+        <View style={{ flex: 1, padding: spacing.md, gap: spacing.md }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
             {QUICK_ACTIONS.map((action) => (
               <Pressable
                 key={action.href}
                 onPress={() => router.push(action.href)}
                 style={({ pressed }) => ({
-                  width: "47%",
+                  width: "23%",
+                  aspectRatio: 1,
                   backgroundColor: colors.white,
-                  borderRadius: radii.lg,
-                  padding: spacing.md,
-                  gap: spacing.xs,
+                  borderRadius: radii.md,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 2,
                   opacity: pressed ? 0.85 : 1,
                   ...shadows.card,
                 })}
               >
-                <Text style={{ fontSize: typeScale.xxl }}>{action.icon}</Text>
-                <Text style={{ fontSize: typeScale.base, fontWeight: "700", color: colors.black }}>{action.label}</Text>
-                <Text style={{ fontSize: typeScale.xs, color: colors.gray[700] }}>{action.subtitle}</Text>
+                <Text style={{ fontSize: typeScale.lg }}>{action.icon}</Text>
+                <Text style={{ fontSize: 10, fontWeight: "700", color: colors.black, textAlign: "center" }}>{action.label}</Text>
               </Pressable>
             ))}
+          </View>
+
+          {nextTask ? (
             <Pressable
-              onPress={() => Alert.alert("Coming Soon", "Invoices and billing are coming soon.")}
+              onPress={() => router.push("/service/new")}
               style={({ pressed }) => ({
-                width: "47%",
+                flexDirection: "row",
+                alignItems: "center",
                 backgroundColor: colors.white,
-                borderRadius: radii.lg,
-                padding: spacing.md,
-                gap: spacing.xs,
+                borderRadius: radii.md,
+                padding: spacing.sm,
+                gap: spacing.sm,
                 opacity: pressed ? 0.85 : 1,
                 ...shadows.card,
               })}
             >
-              <Text style={{ fontSize: typeScale.xxl }}>📄</Text>
-              <Text style={{ fontSize: typeScale.base, fontWeight: "700", color: colors.black }}>Invoices</Text>
-              <Text style={{ fontSize: typeScale.xs, color: colors.gray[700] }}>Coming soon</Text>
-            </Pressable>
-          </View>
-
-          {nextTask ? (
-            <View>
-              <Text style={{ fontSize: typeScale.lg, fontWeight: "700", color: colors.black, marginBottom: spacing.sm }}>
-                Upcoming Service
-              </Text>
-              <View style={{ backgroundColor: colors.white, borderRadius: radii.lg, padding: spacing.lg, gap: spacing.xs, ...shadows.card }}>
-                <Text style={{ fontSize: typeScale.base, fontWeight: "700", color: colors.black }}>{nextTask.equipmentLabel}</Text>
-                <Text style={{ fontSize: typeScale.sm, color: colors.gray[700] }}>{nextTask.task_name}</Text>
-                <Text style={{ fontSize: typeScale.sm, color: colors.status.warning, fontWeight: "600" }}>
+              <Text style={{ fontSize: typeScale.lg }}>🔧</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: typeScale.xs, fontWeight: "700", color: colors.black }} numberOfLines={1}>
+                  {nextTask.equipmentLabel} · {nextTask.task_name}
+                </Text>
+                <Text style={{ fontSize: 10, color: colors.status.warning, fontWeight: "600" }}>
                   {nextTask.due_at_date
-                    ? `Due ${new Date(nextTask.due_at_date).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}`
+                    ? `Due ${new Date(nextTask.due_at_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
                     : nextTask.due_at_hours != null
                       ? `Due at ${nextTask.due_at_hours} hrs`
                       : "Due soon"}
                 </Text>
-                <Pressable
-                  onPress={() => router.push("/service/new")}
-                  style={({ pressed }) => ({
-                    marginTop: spacing.sm,
-                    alignSelf: "flex-start",
-                    backgroundColor: colors.green[500],
-                    borderRadius: radii.md,
-                    paddingHorizontal: spacing.lg,
-                    minHeight: 44,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: pressed ? 0.85 : 1,
-                  })}
-                >
-                  <Text style={{ color: colors.white, fontWeight: "700" }}>Schedule</Text>
-                </Pressable>
               </View>
-            </View>
+              <View style={{ backgroundColor: colors.green[500], borderRadius: radii.sm, paddingHorizontal: spacing.sm, paddingVertical: 6 }}>
+                <Text style={{ color: colors.white, fontSize: 10, fontWeight: "700" }}>Schedule</Text>
+              </View>
+            </Pressable>
           ) : null}
 
           {promotions.length > 0 ? (
-            <View>
-              <Text style={{ fontSize: typeScale.lg, fontWeight: "700", color: colors.black, marginBottom: spacing.sm }}>
-                Current Promotions
-              </Text>
-              <FlatList
-                horizontal
-                data={promotions}
-                keyExtractor={(p) => p.id}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: spacing.sm }}
-                renderItem={({ item }) => (
-                  <View style={{ width: 220, backgroundColor: colors.green[50], borderRadius: radii.lg, padding: spacing.md, gap: spacing.xs }}>
-                    <Text style={{ fontWeight: "700", color: colors.green[700] }}>{item.title}</Text>
-                    {item.body ? <Text style={{ fontSize: typeScale.xs, color: colors.gray[700] }}>{item.body}</Text> : null}
-                  </View>
-                )}
-              />
+            <View style={{ flexDirection: "row", gap: spacing.xs }}>
+              {promotions.map((promo) => (
+                <View key={promo.id} style={{ flex: 1, backgroundColor: colors.green[50], borderRadius: radii.sm, padding: spacing.xs }}>
+                  <Text style={{ fontSize: 10, fontWeight: "700", color: colors.green[700] }} numberOfLines={1}>
+                    {promo.title}
+                  </Text>
+                </View>
+              ))}
             </View>
           ) : null}
         </View>
@@ -242,9 +213,9 @@ export default function HomeScreen() {
           position: "absolute",
           right: spacing.lg,
           bottom: spacing.lg,
-          width: 60,
-          height: 60,
-          borderRadius: 30,
+          width: 52,
+          height: 52,
+          borderRadius: 26,
           backgroundColor: colors.green[500],
           alignItems: "center",
           justifyContent: "center",
@@ -252,7 +223,7 @@ export default function HomeScreen() {
           ...shadows.raised,
         })}
       >
-        <Text style={{ fontSize: typeScale.xxl, color: colors.white }}>+</Text>
+        <Text style={{ fontSize: typeScale.xl, color: colors.white }}>+</Text>
       </Pressable>
     </View>
   );
@@ -260,9 +231,9 @@ export default function HomeScreen() {
 
 function StatPill({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
-    <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radii.md, padding: spacing.sm, alignItems: "center" }}>
-      <Text style={{ color: muted ? "rgba(255,255,255,0.6)" : colors.white, fontSize: typeScale.lg, fontWeight: "700" }}>{value}</Text>
-      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: typeScale.xs }}>{label}</Text>
+    <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radii.sm, paddingVertical: 6, alignItems: "center" }}>
+      <Text style={{ color: muted ? "rgba(255,255,255,0.6)" : colors.white, fontSize: typeScale.base, fontWeight: "700" }}>{value}</Text>
+      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 10 }}>{label}</Text>
     </View>
   );
 }
