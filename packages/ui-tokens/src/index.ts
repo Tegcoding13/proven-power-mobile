@@ -1,30 +1,62 @@
-// Provisional brand palette derived from the Proven Power logo (green/black/white).
+// Premium dark-forest-green brand palette, derived from the Proven Power logo
+// but deepened for a modern app shell (hero gradients, dark headers).
 // Replace `green` with the exact brand hex once a logo source file / brand guide is provided.
 export const colors = {
   green: {
-    50: "#EAF5EC",
-    100: "#C9E5CE",
-    300: "#6FAD7C",
-    500: "#2D7A3A",
-    600: "#256530",
-    700: "#1D4F26",
-    900: "#10301660",
+    50: "#E8F3EE",
+    100: "#C5E0D2",
+    300: "#5FA382",
+    500: "#0B5D3B",
+    600: "#094B30",
+    700: "#073923",
+    900: "#042217",
   },
   black: "#111111",
   white: "#FFFFFF",
   gray: {
-    50: "#F7F7F7",
-    100: "#EDEDED",
-    300: "#C9C9C9",
-    500: "#8A8A8A",
-    700: "#4A4A4A",
+    50: "#F7F8F8",
+    100: "#EDEFEE",
+    300: "#C9CDCB",
+    500: "#8A9290",
+    700: "#4A524F",
   },
   status: {
-    success: "#2D7A3A",
+    success: "#0B5D3B",
     warning: "#C97A1A",
     danger: "#B3261E",
     info: "#1B6FA8",
   },
+} as const;
+
+// Hero/header gradient — dark forest green, deepening toward the bottom.
+export const gradients = {
+  hero: [colors.green[500], colors.green[900]] as [string, string],
+} as const;
+
+// Platform-agnostic "soft shadow" presets. React Native (iOS) reads the
+// shadow* keys; Android needs `elevation`; web/Next.js should use boxShadow
+// instead (see packages/ui-tokens's README note in this file).
+export const shadows = {
+  card: {
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  raised: {
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+} as const;
+
+// CSS box-shadow equivalents of the presets above, for web.
+export const boxShadows = {
+  card: "0 4px 12px rgba(0, 0, 0, 0.08)",
+  raised: "0 8px 20px rgba(0, 0, 0, 0.14)",
 } as const;
 
 export const spacing = {
@@ -58,6 +90,9 @@ export const typeScale = {
 
 export const theme = {
   colors,
+  gradients,
+  shadows,
+  boxShadows,
   spacing,
   radii,
   typeScale,

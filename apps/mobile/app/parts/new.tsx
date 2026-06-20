@@ -4,10 +4,10 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { colors, spacing, radii, typeScale, minTouchTarget } from "@proven-power/ui-tokens";
 import type { Equipment, PartsRequestType } from "@proven-power/shared-types";
-import { supabase } from "../../../lib/supabase";
-import { useAuth } from "../../../lib/auth-context";
-import { useBusinessAccount } from "../../../lib/business-account";
-import { uploadPartsRequestMedia } from "../../../lib/parts-request-media";
+import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../lib/auth-context";
+import { useBusinessAccount } from "../../lib/business-account";
+import { uploadPartsRequestMedia } from "../../lib/parts-request-media";
 
 const REQUEST_TYPES: { value: PartsRequestType; label: string }[] = [
   { value: "stock_check", label: "Is it in stock?" },

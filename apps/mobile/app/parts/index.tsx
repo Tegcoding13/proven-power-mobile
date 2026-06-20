@@ -3,9 +3,9 @@ import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl } fr
 import { useFocusEffect, useRouter } from "expo-router";
 import { colors, spacing, radii, typeScale, minTouchTarget } from "@proven-power/ui-tokens";
 import type { PartsRequest } from "@proven-power/shared-types";
-import { supabase } from "../../../lib/supabase";
-import { useBusinessAccount } from "../../../lib/business-account";
-import { StatusBadge } from "../../../components/StatusBadge";
+import { supabase } from "../../lib/supabase";
+import { useBusinessAccount } from "../../lib/business-account";
+import { StatusBadge } from "../../components/StatusBadge";
 
 export default function PartsListScreen() {
   const router = useRouter();

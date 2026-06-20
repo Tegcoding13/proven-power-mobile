@@ -786,6 +786,34 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["winter_storage_checkin_photos"]["Insert"]>;
         Relationships: [];
       };
+      promotions: {
+        Row: {
+          id: string;
+          dealership_location_id: string | null;
+          title: string;
+          body: string | null;
+          image_url: string | null;
+          starts_at: string;
+          ends_at: string | null;
+          is_active: boolean;
+          created_by_profile_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          dealership_location_id?: string | null;
+          title: string;
+          body?: string | null;
+          image_url?: string | null;
+          starts_at?: string;
+          ends_at?: string | null;
+          is_active?: boolean;
+          created_by_profile_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["promotions"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -832,3 +860,4 @@ export type InventoryListing = Database["public"]["Tables"]["inventory_listings"
 export type InventoryListingPhoto = Database["public"]["Tables"]["inventory_listing_photos"]["Row"];
 export type WinterStorageSignup = Database["public"]["Tables"]["winter_storage_signups"]["Row"];
 export type WinterStorageCheckinPhoto = Database["public"]["Tables"]["winter_storage_checkin_photos"]["Row"];
+export type Promotion = Database["public"]["Tables"]["promotions"]["Row"];

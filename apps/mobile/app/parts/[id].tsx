@@ -3,9 +3,9 @@ import { View, Text, ScrollView, Image, FlatList, ActivityIndicator } from "reac
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { colors, spacing, radii, typeScale } from "@proven-power/ui-tokens";
 import type { PartsRequest } from "@proven-power/shared-types";
-import { supabase } from "../../../lib/supabase";
-import { getSignedPartsRequestMediaUrl } from "../../../lib/parts-request-media";
-import { StatusBadge } from "../../../components/StatusBadge";
+import { supabase } from "../../lib/supabase";
+import { getSignedPartsRequestMediaUrl } from "../../lib/parts-request-media";
+import { StatusBadge } from "../../components/StatusBadge";
 
 export default function PartsRequestDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

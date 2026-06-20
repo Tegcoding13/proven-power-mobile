@@ -33,6 +33,7 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!!session}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="parts" options={{ presentation: "card" }} />
         <Stack.Screen name="inventory" options={{ presentation: "card" }} />
         <Stack.Screen name="winter-storage" options={{ presentation: "card" }} />
         <Stack.Screen name="locations" options={{ presentation: "card" }} />

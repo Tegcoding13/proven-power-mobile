@@ -1,18 +1,20 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View, Text, FlatList, Pressable, Image, ActivityIndicator, RefreshControl } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { colors, spacing, radii, typeScale } from "@proven-power/ui-tokens";
-import type { InventoryListing } from "@proven-power/shared-types";
+import { colors, spacing, radii, typeScale, minTouchTarget } from "@proven-power/ui-tokens";
+import type { InventoryListing, InventoryCondition } from "@proven-power/shared-types";
 import { supabase } from "../../lib/supabase";
 import { getPublicInventoryPhotoUrl } from "../../lib/inventory";
 
 type ListingWithPhoto = InventoryListing & { photoUrl: string | null };
+type ConditionFilter = InventoryCondition | "all";
 
 export default function InventoryListScreen() {
   const router = useRouter();
   const [listings, setListings] = useState<ListingWithPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filter, setFilter] = useState<ConditionFilter>("all");
 
   const load = useCallback(async (showSpinner: boolean) => {
     if (showSpinner) setIsLoading(true);
@@ -45,6 +47,11 @@ export default function InventoryListScreen() {
     }, [load])
   );
 
+  const filteredListings = useMemo(
+    () => (filter === "all" ? listings : listings.filter((l) => l.condition === filter)),
+    [listings, filter]
+  );
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.white }}>
@@ -56,11 +63,32 @@ export default function InventoryListScreen() {
   return (
     <FlatList
       style={{ flex: 1, backgroundColor: colors.white }}
-      data={listings}
+      data={filteredListings}
       keyExtractor={(item) => item.id}
       contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
       refreshControl={
         <RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsRefreshing(true); load(false); }} />
+      }
+      ListHeaderComponent={
+        <View style={{ flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md }}>
+          {(["all", "new", "used"] as ConditionFilter[]).map((option) => (
+            <Pressable
+              key={option}
+              onPress={() => setFilter(option)}
+              style={{
+                paddingHorizontal: spacing.md,
+                minHeight: minTouchTarget,
+                justifyContent: "center",
+                borderRadius: radii.pill,
+                backgroundColor: filter === option ? colors.green[500] : colors.gray[100],
+              }}
+            >
+              <Text style={{ color: filter === option ? colors.white : colors.black, fontWeight: "600", textTransform: "capitalize" }}>
+                {option}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       }
       ListEmptyComponent={
         <View style={{ alignItems: "center", marginTop: spacing.xxl }}>

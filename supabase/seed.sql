@@ -10,7 +10,7 @@ values
     'Oconomowoc',
     'WI',
     '53066',
-    '(262) 781-9050',
+    '(920) 474-4890',
     null, -- TODO: after-hours/emergency breakdown number not yet confirmed
     43.1397,
     -88.4587,

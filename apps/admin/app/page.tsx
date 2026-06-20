@@ -42,6 +42,9 @@ export default async function StaffHomePage() {
         <Link href="/winter-storage" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
           Winter Storage
         </Link>
+        <Link href="/promotions" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
+          Promotions
+        </Link>
         <Link href="/notifications" className="min-h-12 flex items-center rounded-lg bg-green-600 px-6 font-semibold text-white">
           Notification Rules
         </Link>
