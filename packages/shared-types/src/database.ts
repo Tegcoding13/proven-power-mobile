@@ -814,6 +814,33 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["promotions"]["Insert"]>;
         Relationships: [];
       };
+      aspen_customer_imports: {
+        Row: {
+          id: string;
+          aspen_customer_id: string;
+          phone: string;
+          full_name: string | null;
+          email: string | null;
+          business_account_id: string;
+          claimed_by_profile_id: string | null;
+          claimed_at: string | null;
+          imported_at: string;
+          raw_payload: Record<string, unknown> | null;
+        };
+        Insert: {
+          id?: string;
+          aspen_customer_id: string;
+          phone: string;
+          full_name?: string | null;
+          email?: string | null;
+          business_account_id: string;
+          claimed_by_profile_id?: string | null;
+          claimed_at?: string | null;
+          raw_payload?: Record<string, unknown> | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["aspen_customer_imports"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -861,3 +888,4 @@ export type InventoryListingPhoto = Database["public"]["Tables"]["inventory_list
 export type WinterStorageSignup = Database["public"]["Tables"]["winter_storage_signups"]["Row"];
 export type WinterStorageCheckinPhoto = Database["public"]["Tables"]["winter_storage_checkin_photos"]["Row"];
 export type Promotion = Database["public"]["Tables"]["promotions"]["Row"];
+export type AspenCustomerImport = Database["public"]["Tables"]["aspen_customer_imports"]["Row"];
