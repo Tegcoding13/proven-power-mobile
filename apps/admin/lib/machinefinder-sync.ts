@@ -1,6 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
-import type { EquipmentCategory, InventoryStatus } from "@proven-power/shared-types";
-import { createClient } from "./supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, EquipmentCategory, InventoryStatus } from "@proven-power/shared-types";
 
 const FEED_URL = "https://provenpower.com/wp-json/mfp/v1/feed";
 const EXTERNAL_SOURCE = "machinefinder";
@@ -68,9 +68,9 @@ export interface MachineFinderSyncResult {
   errors: string[];
 }
 
-export async function syncMachineFinderInventory(): Promise<MachineFinderSyncResult> {
-  const supabase = await createClient();
-
+export async function syncMachineFinderInventory(
+  supabase: SupabaseClient<Database>
+): Promise<MachineFinderSyncResult> {
   const response = await fetch(FEED_URL, { headers: { Accept: "application/xml" }, cache: "no-store" });
   if (!response.ok) {
     throw new Error(`MachineFinder feed request failed: ${response.status} ${response.statusText}`);
