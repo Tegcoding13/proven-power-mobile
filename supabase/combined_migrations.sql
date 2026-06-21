@@ -1,4 +1,4 @@
--- Combined migrations 0001-0009, generated for one-shot paste into the Supabase SQL editor.
+-- Combined migrations 0001-0012, generated for one-shot paste into the Supabase SQL editor.
 -- Source of truth is still the individual files in supabase/migrations/.
 
 -- ============================================================
@@ -190,6 +190,8 @@ create function public.custom_access_token_hook(event jsonb)
 returns jsonb
 language plpgsql
 stable
+security definer
+set search_path = public
 as $$
 declare
   claims jsonb;
@@ -1321,4 +1323,171 @@ create policy "members upload own checkin photo files" on storage.objects for in
     bucket_id = 'winter-storage-checkin-photos'
     and (public.business_account_role(((storage.foldername(name))[1])::uuid) is not null or public.is_staff())
   );
+
+-- ============================================================
+-- migrations/0010_promotions.sql
+-- ============================================================
+-- Promotions — staff-managed, shown on the customer home screen.
+
+create table promotions (
+  id uuid primary key default gen_random_uuid(),
+  dealership_location_id uuid references dealership_locations(id),
+  title text not null,
+  body text,
+  image_url text,
+  starts_at timestamptz not null default now(),
+  ends_at timestamptz,
+  is_active boolean not null default true,
+  created_by_profile_id uuid references profiles(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index promotions_active_idx on promotions (is_active, starts_at, ends_at);
+
+create trigger promotions_set_updated_at
+  before update on promotions
+  for each row execute function public.set_updated_at_now();
+
+alter table promotions enable row level security;
+
+create policy "anyone reads live promotions" on promotions for select
+  using (
+    (is_active and starts_at <= now() and (ends_at is null or ends_at >= now()))
+    or public.is_staff()
+  );
+create policy "staff manage promotions" on promotions for all
+  using (public.is_staff())
+  with check (public.is_staff());
+
+-- ============================================================
+-- migrations/0011_aspen_import_staging.sql
+-- ============================================================
+-- Aspen (Charter Software DMS) customer import staging — prep work ahead of
+-- confirmed API access. The idea: a future sync job populates
+-- aspen_customer_imports + a real business_accounts/equipment row for each
+-- Aspen customer, keyed by phone number, BEFORE that person ever signs up.
+-- When they eventually authenticate (today: email/password; future: phone
+-- OTP) with a matching phone, handle_new_user() links their new profile to
+-- the pre-existing business account instead of creating a blank solo one.
+--
+-- Nothing here changes today's sign-up behavior for unmatched phones/emails —
+-- this is purely additive until an import actually runs.
+
+create table aspen_customer_imports (
+  id uuid primary key default gen_random_uuid(),
+  aspen_customer_id text not null unique,
+  phone text not null,
+  full_name text,
+  email text,
+  business_account_id uuid not null references business_accounts(id) on delete cascade,
+  claimed_by_profile_id uuid references profiles(id),
+  claimed_at timestamptz,
+  imported_at timestamptz not null default now(),
+  raw_payload jsonb
+);
+
+create index aspen_customer_imports_phone_idx on aspen_customer_imports (phone) where claimed_at is null;
+
+alter table aspen_customer_imports enable row level security;
+
+create policy "staff manage aspen imports" on aspen_customer_imports for all
+  using (public.is_staff())
+  with check (public.is_staff());
+
+-- ---------------------------------------------------------------------------
+-- Extend handle_new_user(): if the new auth user's phone matches an
+-- unclaimed import, link them to that pre-existing business account (as
+-- owner) instead of creating a brand-new solo one. Falls through to today's
+-- behavior if there's no match.
+-- ---------------------------------------------------------------------------
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  new_business_account_id uuid;
+  new_full_name text;
+  new_account_type text;
+  matched_import aspen_customer_imports%rowtype;
+begin
+  new_full_name := coalesce(new.raw_user_meta_data->>'full_name', new.email);
+  new_account_type := coalesce(new.raw_user_meta_data->>'account_type', 'customer');
+
+  insert into public.profiles (id, account_type, full_name, phone)
+  values (new.id, new_account_type, new_full_name, new.phone)
+  on conflict (id) do nothing;
+
+  if new_account_type = 'customer' then
+    if new.phone is not null then
+      select * into matched_import
+      from aspen_customer_imports
+      where phone = new.phone and claimed_at is null
+      limit 1;
+    end if;
+
+    if matched_import.id is not null then
+      insert into public.business_account_members (business_account_id, profile_id, role, status)
+      values (matched_import.business_account_id, new.id, 'owner', 'active');
+
+      update aspen_customer_imports
+      set claimed_by_profile_id = new.id, claimed_at = now()
+      where id = matched_import.id;
+    else
+      insert into public.business_accounts (name)
+      values (new_full_name || '''s Account')
+      returning id into new_business_account_id;
+
+      insert into public.business_account_members (business_account_id, profile_id, role, status)
+      values (new_business_account_id, new.id, 'owner', 'active');
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+-- ============================================================
+-- migrations/0012_fix_access_token_hook_rls.sql
+-- ============================================================
+-- Fix: custom_access_token_hook was not marked SECURITY DEFINER, so when
+-- Supabase Auth actually invokes it (as the supabase_auth_admin role, with
+-- no request-scoped auth.uid()), the RLS policy on profiles silently
+-- returned zero rows — account_type always fell back to 'customer', so
+-- staff could never log into the admin app. The grants we added in 0001
+-- (GRANT SELECT) don't bypass RLS by themselves; only SECURITY DEFINER
+-- (running as the function's owner, who owns the table) does.
+--
+-- A manual test via the service-role key didn't catch this because the
+-- service role bypasses RLS entirely, masking the exact bug.
+
+create or replace function public.custom_access_token_hook(event jsonb)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  claims jsonb;
+  user_account_type text;
+begin
+  select account_type into user_account_type
+  from public.profiles
+  where id = (event->>'user_id')::uuid;
+
+  claims := event->'claims';
+
+  if jsonb_typeof(claims->'app_metadata') is null then
+    claims := jsonb_set(claims, '{app_metadata}', '{}');
+  end if;
+
+  claims := jsonb_set(claims, '{app_metadata, account_type}', to_jsonb(coalesce(user_account_type, 'customer')));
+  event := jsonb_set(event, '{claims}', claims);
+
+  return event;
+end;
+$$;
 
