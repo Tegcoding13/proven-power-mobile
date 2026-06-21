@@ -15,7 +15,7 @@ async function fetchListingData(id: string) {
   const { data: photoRows } = await supabase.from("inventory_listing_photos").select("*").eq("listing_id", id);
   return {
     listing: listing ?? null,
-    photos: (photoRows ?? []).map((p) => ({ id: p.id, url: getPublicInventoryPhotoUrl(p.storage_path) })),
+    photos: (photoRows ?? []).map((p) => ({ id: p.id, url: getPublicInventoryPhotoUrl(p) })),
   };
 }
 

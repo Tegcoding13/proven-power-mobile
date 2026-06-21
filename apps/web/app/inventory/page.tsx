@@ -21,11 +21,11 @@ export default function InventoryListPage() {
       const listingIds = (data ?? []).map((l) => l.id);
       const { data: photoRows } = listingIds.length
         ? await supabase.from("inventory_listing_photos").select("*").in("listing_id", listingIds)
-        : { data: [] as { listing_id: string; storage_path: string }[] };
+        : { data: [] as { listing_id: string; storage_path: string | null; external_url: string | null }[] };
       const photoByListing = new Map<string, string>();
       for (const photo of photoRows ?? []) {
         if (!photoByListing.has(photo.listing_id)) {
-          photoByListing.set(photo.listing_id, getPublicInventoryPhotoUrl(photo.storage_path));
+          photoByListing.set(photo.listing_id, getPublicInventoryPhotoUrl(photo));
         }
       }
 

@@ -24,7 +24,7 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
 
       const { data: photoRows } = await supabase.from("inventory_listing_photos").select("*").eq("listing_id", id);
       if (!isCurrent) return;
-      setPhotoUrls((photoRows ?? []).map((p) => getPublicInventoryPhotoUrl(p.storage_path)));
+      setPhotoUrls((photoRows ?? []).map((p) => getPublicInventoryPhotoUrl(p)));
       setIsLoading(false);
     })();
 

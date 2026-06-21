@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { staffRouter } from "./routes/staff.js";
+import { inventoryRouter } from "./routes/inventory.js";
 
 const app = express();
 const port = process.env.PORT ?? 4000;
@@ -18,6 +19,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/staff", staffRouter);
+app.use("/inventory", inventoryRouter);
 
 app.listen(port, () => {
   console.log(`Proven Power API listening on port ${port}`);

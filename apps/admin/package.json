@@ -16,7 +16,8 @@
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "@proven-power/shared-types": "workspace:*",
-    "@proven-power/ui-tokens": "workspace:*"
+    "@proven-power/ui-tokens": "workspace:*",
+    "fast-xml-parser": "^5.9.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

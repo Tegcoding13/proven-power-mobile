@@ -20,7 +20,7 @@ export default function InventoryDetailScreen() {
     setListing(listingRow ?? null);
 
     const { data: photoRows } = await supabase.from("inventory_listing_photos").select("*").eq("listing_id", id);
-    setPhotoUrls((photoRows ?? []).map((p) => getPublicInventoryPhotoUrl(p.storage_path)));
+    setPhotoUrls((photoRows ?? []).map((p) => getPublicInventoryPhotoUrl(p)));
     setIsLoading(false);
   }, [id]);
 

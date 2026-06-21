@@ -4,31 +4,68 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { InventoryListing } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
+import { syncMachineFinder } from "./actions";
 
 export default function AdminInventoryListPage() {
   const [listings, setListings] = useState<InventoryListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  async function fetchListings(): Promise<InventoryListing[]> {
+    const supabase = createClient();
+    const { data } = await supabase.from("inventory_listings").select("*").order("created_at", { ascending: false });
+    return data ?? [];
+  }
+
+  async function loadListings() {
+    setListings(await fetchListings());
+    setIsLoading(false);
+  }
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("inventory_listings")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setListings(data ?? []);
-        setIsLoading(false);
-      });
+    fetchListings().then((result) => {
+      setListings(result);
+      setIsLoading(false);
+    });
   }, []);
+
+  async function handleSync() {
+    setIsSyncing(true);
+    setSyncMessage(null);
+    try {
+      const result = await syncMachineFinder();
+      setSyncMessage(
+        result.errors.length > 0
+          ? `Synced ${result.upserted}/${result.fetched} listings. ${result.errors.length} error(s): ${result.errors[0]}`
+          : `Synced ${result.upserted} used listing(s) from MachineFinder.`
+      );
+      await loadListings();
+    } catch (err) {
+      setSyncMessage(err instanceof Error ? err.message : "Sync failed.");
+    }
+    setIsSyncing(false);
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-4xl mx-auto w-full">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <h1 className="text-2xl font-bold text-green-700">Inventory</h1>
-        <Link href="/inventory/new" className="min-h-12 flex items-center rounded-lg bg-green-600 px-4 font-semibold text-white">
-          + Add Listing
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="min-h-12 flex items-center rounded-lg border border-green-600 px-4 font-semibold text-green-700 disabled:opacity-60"
+          >
+            {isSyncing ? "Syncing..." : "Sync Used Inventory"}
+          </button>
+          <Link href="/inventory/new" className="min-h-12 flex items-center rounded-lg bg-green-600 px-4 font-semibold text-white">
+            + Add Listing
+          </Link>
+        </div>
       </div>
+
+      {syncMessage ? <p className="text-sm text-gray-700">{syncMessage}</p> : null}
 
       {isLoading ? (
         <p className="text-gray-700">Loading...</p>

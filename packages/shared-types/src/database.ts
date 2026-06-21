@@ -175,6 +175,7 @@ export interface Database {
           longitude: number | null;
           hours: DealershipHours | null;
           is_active: boolean;
+          machinefinder_dealer_id: string | null;
         };
         Insert: {
           id?: string;
@@ -189,6 +190,7 @@ export interface Database {
           longitude?: number | null;
           hours?: DealershipHours | null;
           is_active?: boolean;
+          machinefinder_dealer_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["dealership_locations"]["Insert"]>;
         Relationships: [];
@@ -724,13 +726,15 @@ export interface Database {
         Row: {
           id: string;
           listing_id: string;
-          storage_path: string;
+          storage_path: string | null;
+          external_url: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           listing_id: string;
-          storage_path: string;
+          storage_path?: string | null;
+          external_url?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["inventory_listing_photos"]["Insert"]>;
         Relationships: [];
