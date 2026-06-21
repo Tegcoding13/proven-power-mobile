@@ -21,9 +21,19 @@ const CATEGORY_MAP: Record<string, EquipmentCategory> = {
   "implements": "attachment",
 };
 
-function mapCategory(rawCategory: string | undefined): EquipmentCategory {
-  if (!rawCategory) return "other";
-  return CATEGORY_MAP[rawCategory.trim().toLowerCase()] ?? "other";
+function mapCategory(rawCategory: string | number | undefined): EquipmentCategory {
+  const category = asTrimmedString(rawCategory);
+  if (!category) return "other";
+  return CATEGORY_MAP[category.toLowerCase()] ?? "other";
+}
+
+// The XML parser returns numbers for any element whose text content is purely
+// digits (e.g. a stock number like "80370"), so every feed field that's
+// nominally text needs this coercion before .trim() is safe to call.
+function asTrimmedString(value: string | number | undefined): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const str = String(value).trim();
+  return str.length > 0 ? str : undefined;
 }
 
 function mapStatus(statusKey: string | undefined): InventoryStatus {
@@ -50,16 +60,16 @@ interface RawMachineImage {
 
 interface RawMachine {
   id: string | number;
-  description?: string;
+  description?: string | number;
   advertised_price?: { amount?: string | number };
   dealerId?: string | number;
-  category?: string;
-  manufacturer?: string;
-  model?: string;
-  serialNumber?: string;
+  category?: string | number;
+  manufacturer?: string | number;
+  model?: string | number;
+  serialNumber?: string | number;
   modelYear?: string | number;
   isNew?: boolean | string;
-  stockNumber?: string;
+  stockNumber?: string | number;
   status?: { key?: string };
   images?: { image?: RawMachineImage | RawMachineImage[] };
 }
@@ -96,8 +106,8 @@ export async function syncMachineFinderInventory(): Promise<MachineFinderSyncRes
   for (const machine of machines) {
     try {
       const externalId = String(machine.id);
-      const make = machine.manufacturer?.trim() || "John Deere";
-      const model = machine.model?.trim() || "Equipment";
+      const make = asTrimmedString(machine.manufacturer) ?? "John Deere";
+      const model = asTrimmedString(machine.model) ?? "Equipment";
       const modelYear = machine.modelYear ? Number(machine.modelYear) : null;
       const title = [modelYear, make, model].filter(Boolean).join(" ");
 
@@ -115,11 +125,11 @@ export async function syncMachineFinderInventory(): Promise<MachineFinderSyncRes
             model,
             model_year: modelYear,
             title,
-            description: machine.description?.trim() || null,
+            description: asTrimmedString(machine.description) ?? null,
             price: machine.advertised_price?.amount ? Number(machine.advertised_price.amount) : null,
             condition: "used",
             status: mapStatus(machine.status?.key),
-            stock_number: machine.stockNumber?.trim() || null,
+            stock_number: asTrimmedString(machine.stockNumber) ?? null,
           },
           { onConflict: "external_source,external_id" }
         )
@@ -137,9 +147,12 @@ export async function syncMachineFinderInventory(): Promise<MachineFinderSyncRes
 
       await supabaseAdmin.from("inventory_listing_photos").delete().eq("listing_id", listing.id);
       if (photoUrls.length > 0) {
-        await supabaseAdmin.from("inventory_listing_photos").insert(
-          photoUrls.map((external_url) => ({ listing_id: listing.id, external_url }))
-        );
+        const { error: photoError } = await supabaseAdmin
+          .from("inventory_listing_photos")
+          .insert(photoUrls.map((external_url) => ({ listing_id: listing.id, external_url })));
+        if (photoError) {
+          errors.push(`Machine ${externalId} photos: ${photoError.message}`);
+        }
       }
 
       upserted += 1;
