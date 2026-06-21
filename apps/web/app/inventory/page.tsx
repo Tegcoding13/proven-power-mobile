@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import type { InventoryListing } from "@proven-power/shared-types";
+import type { InventoryListing, InventoryCondition } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
 import { getPublicInventoryPhotoUrl } from "../../lib/inventory";
 
 type ListingWithPhoto = InventoryListing & { photoUrl: string | null };
+type ConditionFilter = InventoryCondition | "all";
 
 export default function InventoryListPage() {
   const [listings, setListings] = useState<ListingWithPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<ConditionFilter>("all");
 
   useEffect(() => {
     const supabase = createClient();
@@ -34,6 +36,11 @@ export default function InventoryListPage() {
     })();
   }, []);
 
+  const filteredListings = useMemo(
+    () => (filter === "all" ? listings : listings.filter((l) => l.condition === filter)),
+    [listings, filter]
+  );
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
       <Link href="/" className="text-sm text-green-700">
@@ -41,13 +48,27 @@ export default function InventoryListPage() {
       </Link>
       <h1 className="text-2xl font-bold text-green-700">Inventory</h1>
 
+      <div className="flex gap-2">
+        {(["all", "new", "used"] as ConditionFilter[]).map((option) => (
+          <button
+            key={option}
+            onClick={() => setFilter(option)}
+            className={`min-h-10 rounded-full px-4 text-sm font-semibold capitalize ${
+              filter === option ? "bg-green-600 text-white" : "bg-gray-100 text-black"
+            }`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+
       {isLoading ? (
         <p className="text-gray-700">Loading...</p>
-      ) : listings.length === 0 ? (
-        <p className="text-gray-700">No inventory listed right now.</p>
+      ) : filteredListings.length === 0 ? (
+        <p className="text-gray-700">No {filter === "all" ? "" : filter} inventory listed right now.</p>
       ) : (
         <ul className="flex flex-col gap-3">
-          {listings.map((item) => (
+          {filteredListings.map((item) => (
             <li key={item.id}>
               <Link href={`/inventory/${item.id}`} className="flex items-center gap-4 rounded-lg border border-gray-300 p-4 hover:bg-gray-50">
                 {item.photoUrl ? (
