@@ -31,6 +31,10 @@ export default async function HomePage() {
     ? await supabase.from("business_account_members").select("business_account_id").eq("profile_id", userId).eq("status", "active").limit(1).maybeSingle()
     : { data: null };
 
+  const { count: unreadCount } = userId
+    ? await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("is_read", false)
+    : { count: 0 };
+
   let equipmentCount = 0;
   let activeServiceCount = 0;
   let nextTask: { task_name: string; due_at_date: string | null; due_at_hours: number | null; equipmentLabel: string } | null = null;
@@ -96,13 +100,27 @@ export default async function HomePage() {
               <p className="text-white text-xl font-bold">{profile?.full_name?.split(" ")[0] ?? "there"} 👋</p>
             </div>
           </div>
-          <Link
-            href="/account"
-            className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-white"
-            title="Account"
-          >
-            👤
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/notifications"
+              className="relative w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-white"
+              title="Notifications"
+            >
+              🔔
+              {unreadCount && unreadCount > 0 ? (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              ) : null}
+            </Link>
+            <Link
+              href="/account"
+              className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-white"
+              title="Account"
+            >
+              👤
+            </Link>
+          </div>
         </div>
 
         <div className="max-w-2xl mx-auto w-full grid grid-cols-3 gap-2 mt-6">

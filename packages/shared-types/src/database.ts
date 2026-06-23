@@ -433,6 +433,27 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["storage_season_windows"]["Insert"]>;
         Relationships: [];
       };
+      notifications: {
+        Row: {
+          id: string;
+          profile_id: string;
+          title: string;
+          body: string | null;
+          link: string | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          title: string;
+          body?: string | null;
+          link?: string | null;
+          is_read?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["notifications"]["Insert"]>;
+        Relationships: [];
+      };
       push_tokens: {
         Row: {
           id: string;
@@ -876,6 +897,7 @@ export type EquipmentHourReading = Database["public"]["Tables"]["equipment_hour_
 export type EquipmentAttachment = Database["public"]["Tables"]["equipment_attachments"]["Row"];
 export type MaintenanceScheduleTemplate = Database["public"]["Tables"]["maintenance_schedule_templates"]["Row"];
 export type MaintenanceTask = Database["public"]["Tables"]["maintenance_tasks"]["Row"];
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type PushToken = Database["public"]["Tables"]["push_tokens"]["Row"];
 export type NotificationRule = Database["public"]["Tables"]["notification_rules"]["Row"];
 export type ServiceRequest = Database["public"]["Tables"]["service_requests"]["Row"];

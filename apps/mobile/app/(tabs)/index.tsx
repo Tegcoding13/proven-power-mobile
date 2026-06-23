@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, Pressable, ScrollView, Alert } from "react-native";
+import { View, Text, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -45,8 +45,15 @@ export default function HomeScreen() {
   const [equipmentCount, setEquipmentCount] = useState<number | null>(null);
   const [activeServiceCount, setActiveServiceCount] = useState<number | null>(null);
   const [nextTask, setNextTask] = useState<(MaintenanceTask & { equipmentLabel: string }) | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const load = useCallback(async () => {
+    const { count: unread } = await supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("is_read", false);
+    setUnreadCount(unread ?? 0);
+
     if (!businessAccount) return;
 
     const { count: equipCount } = await supabase
@@ -119,10 +126,30 @@ export default function HomeScreen() {
                 </Text>
               </View>
               <Pressable
-                onPress={() => Alert.alert("Notifications", "Push notifications are coming soon.")}
+                onPress={() => router.push("/notifications")}
                 style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}
               >
                 <Text style={{ fontSize: typeScale.base }}>🔔</Text>
+                {unreadCount > 0 ? (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -2,
+                      right: -2,
+                      minWidth: 16,
+                      height: 16,
+                      borderRadius: 8,
+                      backgroundColor: colors.status.danger,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      paddingHorizontal: 3,
+                    }}
+                  >
+                    <Text style={{ color: colors.white, fontSize: 9, fontWeight: "700" }}>
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </Text>
+                  </View>
+                ) : null}
               </Pressable>
             </View>
 
