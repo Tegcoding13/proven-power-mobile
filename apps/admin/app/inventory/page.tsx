@@ -8,24 +8,34 @@ import { syncMachineFinder } from "./actions";
 
 export default function AdminInventoryListPage() {
   const [listings, setListings] = useState<InventoryListing[]>([]);
+  const [locationNameById, setLocationNameById] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
-  async function fetchListings(): Promise<InventoryListing[]> {
+  async function fetchListings(): Promise<{ listings: InventoryListing[]; locationNameById: Map<string, string> }> {
     const supabase = createClient();
-    const { data } = await supabase.from("inventory_listings").select("*").order("created_at", { ascending: false });
-    return data ?? [];
+    const [{ data }, { data: locationRows }] = await Promise.all([
+      supabase.from("inventory_listings").select("*").order("created_at", { ascending: false }),
+      supabase.from("dealership_locations").select("id, name"),
+    ]);
+    return {
+      listings: data ?? [],
+      locationNameById: new Map((locationRows ?? []).map((l) => [l.id, l.name.replace("Proven Power - ", "")])),
+    };
   }
 
   async function loadListings() {
-    setListings(await fetchListings());
+    const result = await fetchListings();
+    setListings(result.listings);
+    setLocationNameById(result.locationNameById);
     setIsLoading(false);
   }
 
   useEffect(() => {
     fetchListings().then((result) => {
-      setListings(result);
+      setListings(result.listings);
+      setLocationNameById(result.locationNameById);
       setIsLoading(false);
     });
   }, []);
@@ -78,6 +88,7 @@ export default function AdminInventoryListPage() {
               <th className="py-2">Title</th>
               <th className="py-2">Price</th>
               <th className="py-2">Condition</th>
+              <th className="py-2">Store</th>
               <th className="py-2">Status</th>
             </tr>
           </thead>
@@ -91,6 +102,7 @@ export default function AdminInventoryListPage() {
                 </td>
                 <td className="py-3 text-black">{l.price != null ? `$${l.price.toLocaleString()}` : "Call for price"}</td>
                 <td className="py-3 text-black capitalize">{l.condition}</td>
+                <td className="py-3 text-black">{l.dealership_location_id ? (locationNameById.get(l.dealership_location_id) ?? "—") : "—"}</td>
                 <td className="py-3 text-black capitalize">{l.status}</td>
               </tr>
             ))}

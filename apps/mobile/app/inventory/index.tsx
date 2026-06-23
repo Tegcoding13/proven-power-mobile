@@ -12,12 +12,16 @@ type ConditionFilter = InventoryCondition | "all";
 export default function InventoryListScreen() {
   const router = useRouter();
   const [listings, setListings] = useState<ListingWithPhoto[]>([]);
+  const [locationNameById, setLocationNameById] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filter, setFilter] = useState<ConditionFilter>("all");
 
   const load = useCallback(async (showSpinner: boolean) => {
     if (showSpinner) setIsLoading(true);
+
+    const { data: locationRows } = await supabase.from("dealership_locations").select("id, name");
+    setLocationNameById(new Map((locationRows ?? []).map((l) => [l.id, l.name.replace("Proven Power - ", "")])));
 
     const { data } = await supabase
       .from("inventory_listings")
@@ -121,6 +125,11 @@ export default function InventoryListScreen() {
             <Text style={{ fontSize: typeScale.sm, color: colors.gray[700] }}>
               {item.condition === "new" ? "New" : "Used"} · {item.price != null ? `$${item.price.toLocaleString()}` : "Call for price"}
             </Text>
+            {item.dealership_location_id ? (
+              <Text style={{ fontSize: typeScale.xs, color: colors.gray[500] }}>
+                📍 {locationNameById.get(item.dealership_location_id) ?? ""}
+              </Text>
+            ) : null}
           </View>
         </Pressable>
       )}

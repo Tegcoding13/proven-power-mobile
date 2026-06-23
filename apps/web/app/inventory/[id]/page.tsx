@@ -3,13 +3,14 @@
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { InventoryListing } from "@proven-power/shared-types";
+import type { InventoryListing, DealershipLocation } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 import { getPublicInventoryPhotoUrl } from "../../../lib/inventory";
 
 export default function InventoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [listing, setListing] = useState<InventoryListing | null>(null);
+  const [location, setLocation] = useState<DealershipLocation | null>(null);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -21,6 +22,16 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
       const { data: listingRow } = await supabase.from("inventory_listings").select("*").eq("id", id).single();
       if (!isCurrent) return;
       setListing(listingRow ?? null);
+
+      if (listingRow?.dealership_location_id) {
+        const { data: locationRow } = await supabase
+          .from("dealership_locations")
+          .select("*")
+          .eq("id", listingRow.dealership_location_id)
+          .single();
+        if (!isCurrent) return;
+        setLocation(locationRow ?? null);
+      }
 
       const { data: photoRows } = await supabase.from("inventory_listing_photos").select("*").eq("listing_id", id);
       if (!isCurrent) return;
@@ -60,6 +71,9 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
         {listing.model_year ? ` (${listing.model_year})` : ""}
         {listing.stock_number ? ` · Stock #${listing.stock_number}` : ""}
       </p>
+      {location ? (
+        <p className="text-sm text-gray-700">📍 Located at {location.name.replace("Proven Power - ", "")}</p>
+      ) : null}
       {listing.description ? <p className="text-black mt-2">{listing.description}</p> : null}
     </div>
   );

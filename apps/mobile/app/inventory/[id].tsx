@@ -2,13 +2,14 @@ import { useCallback, useState } from "react";
 import { View, Text, ScrollView, FlatList, Image, ActivityIndicator } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { colors, spacing, radii, typeScale } from "@proven-power/ui-tokens";
-import type { InventoryListing } from "@proven-power/shared-types";
+import type { InventoryListing, DealershipLocation } from "@proven-power/shared-types";
 import { supabase } from "../../lib/supabase";
 import { getPublicInventoryPhotoUrl } from "../../lib/inventory";
 
 export default function InventoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [listing, setListing] = useState<InventoryListing | null>(null);
+  const [location, setLocation] = useState<DealershipLocation | null>(null);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -18,6 +19,15 @@ export default function InventoryDetailScreen() {
 
     const { data: listingRow } = await supabase.from("inventory_listings").select("*").eq("id", id).single();
     setListing(listingRow ?? null);
+
+    if (listingRow?.dealership_location_id) {
+      const { data: locationRow } = await supabase
+        .from("dealership_locations")
+        .select("*")
+        .eq("id", listingRow.dealership_location_id)
+        .single();
+      setLocation(locationRow ?? null);
+    }
 
     const { data: photoRows } = await supabase.from("inventory_listing_photos").select("*").eq("listing_id", id);
     setPhotoUrls((photoRows ?? []).map((p) => getPublicInventoryPhotoUrl(p)));
@@ -59,6 +69,9 @@ export default function InventoryDetailScreen() {
         {listing.model_year ? ` (${listing.model_year})` : ""}
         {listing.stock_number ? ` · Stock #${listing.stock_number}` : ""}
       </Text>
+      {location ? (
+        <Text style={{ fontSize: typeScale.sm, color: colors.gray[700] }}>📍 Located at {location.name.replace("Proven Power - ", "")}</Text>
+      ) : null}
       {listing.description ? (
         <Text style={{ fontSize: typeScale.base, color: colors.black, marginTop: spacing.sm }}>{listing.description}</Text>
       ) : null}

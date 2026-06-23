@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { InventoryListing, InventoryStatus } from "@proven-power/shared-types";
+import type { InventoryListing, InventoryStatus, DealershipLocation } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 import { getPublicInventoryPhotoUrl, uploadInventoryPhoto } from "../../../lib/inventory";
 
@@ -11,11 +11,15 @@ const STATUSES: InventoryStatus[] = ["available", "pending", "sold"];
 
 async function fetchListingData(id: string) {
   const supabase = createClient();
-  const { data: listing } = await supabase.from("inventory_listings").select("*").eq("id", id).single();
-  const { data: photoRows } = await supabase.from("inventory_listing_photos").select("*").eq("listing_id", id);
+  const [{ data: listing }, { data: photoRows }, { data: locationRows }] = await Promise.all([
+    supabase.from("inventory_listings").select("*").eq("id", id).single(),
+    supabase.from("inventory_listing_photos").select("*").eq("listing_id", id),
+    supabase.from("dealership_locations").select("*").order("name", { ascending: true }),
+  ]);
   return {
     listing: listing ?? null,
     photos: (photoRows ?? []).map((p) => ({ id: p.id, url: getPublicInventoryPhotoUrl(p) })),
+    locations: locationRows ?? [],
   };
 }
 
@@ -23,6 +27,7 @@ export default function AdminInventoryDetailPage({ params }: { params: Promise<{
   const { id } = use(params);
   const [listing, setListing] = useState<InventoryListing | null>(null);
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
+  const [locations, setLocations] = useState<DealershipLocation[]>([]);
   const [priceInput, setPriceInput] = useState("");
   const [descriptionInput, setDescriptionInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +39,7 @@ export default function AdminInventoryDetailPage({ params }: { params: Promise<{
       if (!isCurrent) return;
       setListing(result.listing);
       setPhotos(result.photos);
+      setLocations(result.locations);
       setPriceInput(result.listing?.price != null ? String(result.listing.price) : "");
       setDescriptionInput(result.listing?.description ?? "");
       setIsLoading(false);
@@ -47,11 +53,18 @@ export default function AdminInventoryDetailPage({ params }: { params: Promise<{
     const result = await fetchListingData(id);
     setListing(result.listing);
     setPhotos(result.photos);
+    setLocations(result.locations);
   }
 
   async function handleStatusChange(status: InventoryStatus) {
     const supabase = createClient();
     await supabase.from("inventory_listings").update({ status }).eq("id", id);
+    reload();
+  }
+
+  async function handleLocationChange(locationId: string) {
+    const supabase = createClient();
+    await supabase.from("inventory_listings").update({ dealership_location_id: locationId || null }).eq("id", id);
     reload();
   }
 
@@ -111,6 +124,22 @@ export default function AdminInventoryDetailPage({ params }: { params: Promise<{
             </button>
           ))}
         </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <p className="font-semibold text-black">Store</p>
+        <select
+          value={listing.dealership_location_id ?? ""}
+          onChange={(e) => handleLocationChange(e.target.value)}
+          className="min-h-12 rounded-lg border border-gray-300 px-4 text-black"
+        >
+          <option value="">Unassigned</option>
+          {locations.map((loc) => (
+            <option key={loc.id} value={loc.id}>
+              {loc.name.replace("Proven Power - ", "")}
+            </option>
+          ))}
+        </select>
       </section>
 
       <section className="flex flex-col gap-2">

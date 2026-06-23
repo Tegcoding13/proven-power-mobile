@@ -12,6 +12,7 @@ type ConditionFilter = InventoryCondition | "all";
 
 export default function InventoryListPage() {
   const [listings, setListings] = useState<ListingWithPhoto[]>([]);
+  const [locationNameById, setLocationNameById] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<ConditionFilter>("all");
 
@@ -19,7 +20,12 @@ export default function InventoryListPage() {
     const supabase = createClient();
 
     (async () => {
-      const { data } = await supabase.from("inventory_listings").select("*").eq("status", "available").order("created_at", { ascending: false });
+      const [{ data }, { data: locationRows }] = await Promise.all([
+        supabase.from("inventory_listings").select("*").eq("status", "available").order("created_at", { ascending: false }),
+        supabase.from("dealership_locations").select("id, name"),
+      ]);
+      setLocationNameById(new Map((locationRows ?? []).map((l) => [l.id, l.name.replace("Proven Power - ", "")])));
+
       const listingIds = (data ?? []).map((l) => l.id);
       const { data: photoRows } = listingIds.length
         ? await supabase.from("inventory_listing_photos").select("*").in("listing_id", listingIds)
@@ -81,6 +87,9 @@ export default function InventoryListPage() {
                   <p className="text-sm text-gray-700">
                     {item.condition === "new" ? "New" : "Used"} · {item.price != null ? `$${item.price.toLocaleString()}` : "Call for price"}
                   </p>
+                  {item.dealership_location_id ? (
+                    <p className="text-xs text-gray-500">📍 {locationNameById.get(item.dealership_location_id) ?? ""}</p>
+                  ) : null}
                 </div>
               </Link>
             </li>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { EquipmentCategory } from "@proven-power/shared-types";
+import type { EquipmentCategory, DealershipLocation } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 
 const CATEGORIES: { value: EquipmentCategory; label: string }[] = [
@@ -24,8 +24,19 @@ export default function NewInventoryListingPage() {
   const [price, setPrice] = useState("");
   const [stockNumber, setStockNumber] = useState("");
   const [description, setDescription] = useState("");
+  const [locations, setLocations] = useState<DealershipLocation[]>([]);
+  const [locationId, setLocationId] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("dealership_locations")
+      .select("*")
+      .order("name", { ascending: true })
+      .then(({ data }) => setLocations(data ?? []));
+  }, []);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -46,6 +57,7 @@ export default function NewInventoryListingPage() {
         price: price ? Number(price) : null,
         stock_number: stockNumber.trim() || null,
         description: description.trim() || null,
+        dealership_location_id: locationId || null,
         created_by_profile_id: userData.user?.id,
       })
       .select("*")
@@ -135,6 +147,18 @@ export default function NewInventoryListingPage() {
           onChange={(e) => setStockNumber(e.target.value)}
           className="min-h-12 rounded-lg border border-gray-300 bg-gray-50 px-4 text-base text-black"
         />
+        <select
+          value={locationId}
+          onChange={(e) => setLocationId(e.target.value)}
+          className="min-h-12 rounded-lg border border-gray-300 bg-gray-50 px-4 text-base text-black"
+        >
+          <option value="">Store (unassigned)</option>
+          {locations.map((loc) => (
+            <option key={loc.id} value={loc.id}>
+              {loc.name.replace("Proven Power - ", "")}
+            </option>
+          ))}
+        </select>
         <textarea
           placeholder="Description"
           value={description}
