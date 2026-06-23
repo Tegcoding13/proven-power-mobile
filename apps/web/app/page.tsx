@@ -15,6 +15,7 @@ const QUICK_ACTIONS = [
   { href: "/winter-storage", label: "Winter Storage", subtitle: "Sign up", icon: "❄️" },
   { href: "/locations", label: "Locations", subtitle: "Hours & contact", icon: "📍" },
   { href: "/inventory", label: "Inventory", subtitle: "New & used units", icon: "📦" },
+  { href: "/deals", label: "Deals & Offers", subtitle: "Current promotions", icon: "🏷️" },
 ];
 
 export default async function HomePage() {

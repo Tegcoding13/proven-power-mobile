@@ -37,6 +37,7 @@ function RootNavigator() {
         <Stack.Screen name="inventory" options={{ presentation: "card" }} />
         <Stack.Screen name="winter-storage" options={{ presentation: "card" }} />
         <Stack.Screen name="locations" options={{ presentation: "card" }} />
+        <Stack.Screen name="deals" options={{ presentation: "card" }} />
       </Stack.Protected>
 
       <Stack.Protected guard={!session}>

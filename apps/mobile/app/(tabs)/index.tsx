@@ -17,7 +17,8 @@ type Route =
   | "/messages"
   | "/inventory"
   | "/winter-storage"
-  | "/locations";
+  | "/locations"
+  | "/deals";
 
 const QUICK_ACTIONS: { href: Route; label: string; icon: string }[] = [
   { href: "/garage", label: "Equipment", icon: "🚜" },
@@ -28,6 +29,7 @@ const QUICK_ACTIONS: { href: Route; label: string; icon: string }[] = [
   { href: "/locations", label: "Locations", icon: "📍" },
   { href: "/inventory", label: "Inventory", icon: "📦" },
   { href: "/service", label: "History", icon: "📋" },
+  { href: "/deals", label: "Deals", icon: "🏷️" },
 ];
 
 function initials(name?: string | null): string {
