@@ -19,7 +19,7 @@ export default async function AccountPage() {
   const settingsRows = [
     { label: "Notification Preferences", comingSoon: true },
     { label: "Payment Methods", comingSoon: true },
-    { label: "Business Account & Team", href: "/account/team" },
+    { label: "Business Account & Team", comingSoon: true },
     { label: "Locations & Contact", href: "/locations" },
   ];
 
