@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, FlatList, Pressable, Image, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, TextInput, FlatList, Pressable, Image, ActivityIndicator, RefreshControl } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { colors, spacing, radii, typeScale, minTouchTarget } from "@proven-power/ui-tokens";
 import type { Equipment } from "@proven-power/shared-types";
@@ -13,6 +13,7 @@ export default function GarageListScreen() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [query, setQuery] = useState("");
 
   const loadEquipment = useCallback(
     async (showSpinner: boolean) => {
@@ -49,10 +50,16 @@ export default function GarageListScreen() {
     );
   }
 
+  const filteredEquipment = equipment.filter((item) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return [item.nickname, item.make, item.model, item.serial_number].some((field) => field?.toLowerCase().includes(q));
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.white }}>
       <FlatList
-        data={equipment}
+        data={filteredEquipment}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
         refreshControl={
@@ -61,14 +68,37 @@ export default function GarageListScreen() {
             loadEquipment(false);
           }} />
         }
+        ListHeaderComponent={
+          equipment.length > 0 ? (
+            <TextInput
+              placeholder="Search by name, model, or serial number"
+              placeholderTextColor={colors.gray[500]}
+              value={query}
+              onChangeText={setQuery}
+              style={{
+                minHeight: minTouchTarget,
+                borderWidth: 1,
+                borderColor: colors.gray[300],
+                borderRadius: radii.md,
+                paddingHorizontal: spacing.md,
+                fontSize: typeScale.base,
+                color: colors.black,
+                backgroundColor: colors.gray[50],
+                marginBottom: spacing.md,
+              }}
+            />
+          ) : null
+        }
         ListEmptyComponent={
           <View style={{ alignItems: "center", marginTop: spacing.xxl, gap: spacing.sm }}>
             <Text style={{ fontSize: typeScale.lg, color: colors.black, textAlign: "center" }}>
-              No equipment yet.
+              {equipment.length === 0 ? "No equipment yet." : `No equipment matches "${query}".`}
             </Text>
-            <Text style={{ fontSize: typeScale.sm, color: colors.gray[700], textAlign: "center" }}>
-              Tap &quot;Add Equipment&quot; below to add your first tractor or piece of equipment.
-            </Text>
+            {equipment.length === 0 ? (
+              <Text style={{ fontSize: typeScale.sm, color: colors.gray[700], textAlign: "center" }}>
+                Tap &quot;Add Equipment&quot; below to add your first tractor or piece of equipment.
+              </Text>
+            ) : null}
           </View>
         }
         renderItem={({ item }) => (

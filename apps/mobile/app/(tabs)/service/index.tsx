@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator, RefreshControl } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { colors, spacing, radii, typeScale, minTouchTarget } from "@proven-power/ui-tokens";
 import type { ServiceRequest, Equipment } from "@proven-power/shared-types";
@@ -15,6 +15,7 @@ export default function ServiceListScreen() {
   const [requests, setRequests] = useState<RequestWithEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [query, setQuery] = useState("");
 
   const load = useCallback(
     async (showSpinner: boolean) => {
@@ -59,10 +60,16 @@ export default function ServiceListScreen() {
     );
   }
 
+  const filteredRequests = requests.filter((item) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return [item.equipmentLabel, item.description, item.status].some((field) => field?.toLowerCase().includes(q));
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.white }}>
       <FlatList
-        data={requests}
+        data={filteredRequests}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
         refreshControl={
@@ -74,9 +81,32 @@ export default function ServiceListScreen() {
             }}
           />
         }
+        ListHeaderComponent={
+          requests.length > 0 ? (
+            <TextInput
+              placeholder="Search by equipment, description, or status"
+              placeholderTextColor={colors.gray[500]}
+              value={query}
+              onChangeText={setQuery}
+              style={{
+                minHeight: minTouchTarget,
+                borderWidth: 1,
+                borderColor: colors.gray[300],
+                borderRadius: radii.md,
+                paddingHorizontal: spacing.md,
+                fontSize: typeScale.base,
+                color: colors.black,
+                backgroundColor: colors.gray[50],
+                marginBottom: spacing.md,
+              }}
+            />
+          ) : null
+        }
         ListEmptyComponent={
           <View style={{ alignItems: "center", marginTop: spacing.xxl, gap: spacing.sm }}>
-            <Text style={{ fontSize: typeScale.lg, color: colors.black, textAlign: "center" }}>No service requests yet.</Text>
+            <Text style={{ fontSize: typeScale.lg, color: colors.black, textAlign: "center" }}>
+              {requests.length === 0 ? "No service requests yet." : `No requests match "${query}".`}
+            </Text>
           </View>
         }
         renderItem={({ item }) => (

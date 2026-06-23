@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { ServiceRequest, Equipment } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
@@ -13,6 +13,7 @@ export default function ServiceListPage() {
   const { businessAccount, isLoading: isLoadingAccount } = useBusinessAccount();
   const [requests, setRequests] = useState<RequestWithEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (!businessAccount) return;
@@ -41,6 +42,14 @@ export default function ServiceListPage() {
     })();
   }, [businessAccount]);
 
+  const filteredRequests = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return requests;
+    return requests.filter((item) =>
+      [item.equipmentLabel, item.description, item.status].some((field) => field?.toLowerCase().includes(q))
+    );
+  }, [requests, query]);
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
       <Link href="/" className="text-sm text-green-700">
@@ -53,13 +62,24 @@ export default function ServiceListPage() {
         </Link>
       </div>
 
+      {requests.length > 0 ? (
+        <input
+          placeholder="Search by equipment, description, or status"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="min-h-12 rounded-lg border border-gray-300 bg-gray-50 px-4 text-base text-black"
+        />
+      ) : null}
+
       {isLoadingAccount || isLoading ? (
         <p className="text-gray-700">Loading...</p>
       ) : requests.length === 0 ? (
         <p className="text-gray-700">No service requests yet.</p>
+      ) : filteredRequests.length === 0 ? (
+        <p className="text-gray-700">No service requests match &quot;{query}&quot;.</p>
       ) : (
         <ul className="flex flex-col gap-3">
-          {requests.map((item) => (
+          {filteredRequests.map((item) => (
             <li key={item.id}>
               <Link href={`/service/${item.id}`} className="flex flex-col gap-1 rounded-lg border border-gray-300 p-4 hover:bg-gray-50">
                 <p className="font-semibold text-black">{item.equipmentLabel}</p>
