@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { useNetworkStatus } from "../lib/use-network-status";
+import { useBusinessAccount } from "../lib/business-account";
 import { colors } from "@proven-power/ui-tokens";
 
 export default function RootLayout() {
@@ -19,9 +20,10 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { session, isLoading } = useAuth();
+  const { businessAccount, isLoading: isLoadingAccount } = useBusinessAccount();
   useNetworkStatus();
 
-  if (isLoading) {
+  if (isLoading || (!!session && isLoadingAccount)) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.white }}>
         <ActivityIndicator size="large" color={colors.green[500]} />
@@ -29,9 +31,11 @@ function RootNavigator() {
     );
   }
 
+  const needsStoreSelection = !!session && !!businessAccount && !businessAccount.primary_location_id;
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={!!session && !needsStoreSelection}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="parts" options={{ presentation: "card" }} />
         <Stack.Screen name="inventory" options={{ presentation: "card" }} />
@@ -39,6 +43,10 @@ function RootNavigator() {
         <Stack.Screen name="locations" options={{ presentation: "card" }} />
         <Stack.Screen name="deals" options={{ presentation: "card" }} />
         <Stack.Screen name="notifications" options={{ presentation: "card" }} />
+      </Stack.Protected>
+
+      <Stack.Protected guard={needsStoreSelection}>
+        <Stack.Screen name="onboarding/choose-store" />
       </Stack.Protected>
 
       <Stack.Protected guard={!session}>

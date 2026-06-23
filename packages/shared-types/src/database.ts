@@ -631,6 +631,7 @@ export interface Database {
           related_service_request_id: string | null;
           related_parts_request_id: string | null;
           assigned_staff_profile_id: string | null;
+          dealership_location_id: string | null;
           status: MessageThreadStatus;
           last_message_at: string;
           created_at: string;
@@ -643,6 +644,7 @@ export interface Database {
           related_service_request_id?: string | null;
           related_parts_request_id?: string | null;
           assigned_staff_profile_id?: string | null;
+          dealership_location_id?: string | null;
           status?: MessageThreadStatus;
         };
         Update: Partial<Database["public"]["Tables"]["message_threads"]["Insert"]>;
