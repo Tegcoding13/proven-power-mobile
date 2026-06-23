@@ -80,8 +80,6 @@ export default async function HomePage() {
     }
   }
 
-  const { data: promotions } = await supabase.from("promotions").select("*").order("starts_at", { ascending: false }).limit(5);
-
   return (
     <div className="flex flex-1 flex-col bg-gray-50">
       <div
@@ -124,24 +122,24 @@ export default async function HomePage() {
       </div>
 
       <div className="max-w-2xl mx-auto w-full px-4 -mt-6 flex flex-col gap-6 pb-16">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {QUICK_ACTIONS.map((action) => (
             <Link
               key={action.href}
               href={action.href}
-              className="bg-white rounded-[20px] p-4 flex flex-col gap-1 hover:bg-green-50 transition-colors"
+              className="bg-white rounded-2xl p-3 flex flex-col gap-1 hover:bg-green-50 transition-colors"
               style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
             >
-              <span className="text-3xl">{action.icon}</span>
+              <span className="text-2xl">{action.icon}</span>
               <span className="font-bold text-black text-sm">{action.label}</span>
               <span className="text-xs text-gray-700">{action.subtitle}</span>
             </Link>
           ))}
           <div
-            className="bg-white rounded-[20px] p-4 flex flex-col gap-1 opacity-70"
+            className="bg-white rounded-2xl p-3 flex flex-col gap-1 opacity-70"
             style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
           >
-            <span className="text-3xl">📄</span>
+            <span className="text-2xl">📄</span>
             <span className="font-bold text-black text-sm">Invoices</span>
             <span className="text-xs text-gray-700">Coming soon</span>
           </div>
@@ -170,19 +168,6 @@ export default async function HomePage() {
           </div>
         ) : null}
 
-        {promotions && promotions.length > 0 ? (
-          <div>
-            <h2 className="text-lg font-bold text-black mb-2">Current Promotions</h2>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {promotions.map((promo) => (
-                <div key={promo.id} className="min-w-[220px] bg-green-50 rounded-[20px] p-4">
-                  <p className="font-bold text-green-700">{promo.title}</p>
-                  {promo.body ? <p className="text-xs text-gray-700 mt-1">{promo.body}</p> : null}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </div>
 
       <Link

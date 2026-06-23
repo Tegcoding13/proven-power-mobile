@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, gradients, spacing, radii, typeScale, shadows } from "@proven-power/ui-tokens";
-import type { MaintenanceTask, Promotion } from "@proven-power/shared-types";
+import type { MaintenanceTask } from "@proven-power/shared-types";
 import { useAuth } from "../../lib/auth-context";
 import { useBusinessAccount } from "../../lib/business-account";
 import { supabase } from "../../lib/supabase";
@@ -45,7 +45,6 @@ export default function HomeScreen() {
   const [equipmentCount, setEquipmentCount] = useState<number | null>(null);
   const [activeServiceCount, setActiveServiceCount] = useState<number | null>(null);
   const [nextTask, setNextTask] = useState<(MaintenanceTask & { equipmentLabel: string }) | null>(null);
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
 
   const load = useCallback(async () => {
     if (!businessAccount) return;
@@ -88,9 +87,6 @@ export default function HomeScreen() {
         setNextTask(null);
       }
     }
-
-    const { data: promoRows } = await supabase.from("promotions").select("*").order("starts_at", { ascending: false }).limit(3);
-    setPromotions(promoRows ?? []);
   }, [businessAccount]);
 
   useFocusEffect(
@@ -145,7 +141,7 @@ export default function HomeScreen() {
                 key={action.href}
                 onPress={() => router.push(action.href)}
                 style={({ pressed }) => ({
-                  width: "23%",
+                  width: "21%",
                   aspectRatio: 1,
                   backgroundColor: colors.white,
                   borderRadius: radii.md,
@@ -156,8 +152,8 @@ export default function HomeScreen() {
                   ...shadows.card,
                 })}
               >
-                <Text style={{ fontSize: typeScale.lg }}>{action.icon}</Text>
-                <Text style={{ fontSize: 10, fontWeight: "700", color: colors.black, textAlign: "center" }}>{action.label}</Text>
+                <Text style={{ fontSize: typeScale.base }}>{action.icon}</Text>
+                <Text style={{ fontSize: 9, fontWeight: "700", color: colors.black, textAlign: "center" }}>{action.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -193,18 +189,6 @@ export default function HomeScreen() {
                 <Text style={{ color: colors.white, fontSize: 10, fontWeight: "700" }}>Schedule</Text>
               </View>
             </Pressable>
-          ) : null}
-
-          {promotions.length > 0 ? (
-            <View style={{ flexDirection: "row", gap: spacing.xs }}>
-              {promotions.map((promo) => (
-                <View key={promo.id} style={{ flex: 1, backgroundColor: colors.green[50], borderRadius: radii.sm, padding: spacing.xs }}>
-                  <Text style={{ fontSize: 10, fontWeight: "700", color: colors.green[700] }} numberOfLines={1}>
-                    {promo.title}
-                  </Text>
-                </View>
-              ))}
-            </View>
           ) : null}
         </View>
       </ScrollView>
