@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, ScrollView, Image, FlatList, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ScrollView, Image, FlatList, ActivityIndicator } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { colors, spacing, radii, typeScale } from "@proven-power/ui-tokens";
 import type { ServiceRequest, ServiceRequestStatusHistory, Equipment, ServiceRequestMediaType } from "@proven-power/shared-types";
@@ -14,6 +14,7 @@ export default function ServiceRequestDetailScreen() {
   const [history, setHistory] = useState<ServiceRequestStatusHistory[]>([]);
   const [mediaUrls, setMediaUrls] = useState<{ id: string; url: string; mediaType: ServiceRequestMediaType }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isApproving, setIsApproving] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -53,6 +54,20 @@ export default function ServiceRequestDetailScreen() {
     }, [load])
   );
 
+  async function handleApproveEstimate() {
+    if (!id) return;
+    setIsApproving(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const { data: updated } = await supabase
+      .from("service_requests")
+      .update({ estimate_approved_at: new Date().toISOString(), estimate_approved_by: userData.user?.id, status: "approved" })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (updated) setRequest(updated);
+    setIsApproving(false);
+  }
+
   if (isLoading || !request) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.white }}>
@@ -70,10 +85,36 @@ export default function ServiceRequestDetailScreen() {
         <StatusBadge status={request.status} />
         <Text style={{ fontSize: typeScale.base, color: colors.gray[700], marginTop: spacing.xs }}>{request.description}</Text>
         {request.estimate_amount != null ? (
-          <Text style={{ fontSize: typeScale.base, color: colors.black, fontWeight: "600" }}>
-            Estimate: ${request.estimate_amount}
-            {request.estimate_approved_at ? " (approved)" : " — awaiting your approval"}
-          </Text>
+          <View style={{ marginTop: spacing.sm, backgroundColor: colors.status.warning + "1A", borderRadius: radii.md, padding: spacing.md, gap: spacing.sm }}>
+            <Text style={{ fontSize: typeScale.base, color: colors.black, fontWeight: "700" }}>
+              Estimate: ${request.estimate_amount.toLocaleString()}
+            </Text>
+            {request.estimate_approved_at ? (
+              <Text style={{ fontSize: typeScale.sm, color: colors.green[700], fontWeight: "600" }}>
+                ✓ Approved {new Date(request.estimate_approved_at).toLocaleDateString()}
+              </Text>
+            ) : (
+              <>
+                <Text style={{ fontSize: typeScale.sm, color: colors.gray[700] }}>Work won&apos;t begin until you approve this estimate.</Text>
+                <Pressable
+                  onPress={handleApproveEstimate}
+                  disabled={isApproving}
+                  style={({ pressed }) => ({
+                    alignSelf: "flex-start",
+                    minHeight: 44,
+                    paddingHorizontal: spacing.lg,
+                    borderRadius: radii.md,
+                    backgroundColor: colors.green[500],
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: pressed || isApproving ? 0.7 : 1,
+                  })}
+                >
+                  <Text style={{ color: colors.white, fontWeight: "700" }}>{isApproving ? "Approving..." : "Approve Estimate"}</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
         ) : null}
       </View>
 

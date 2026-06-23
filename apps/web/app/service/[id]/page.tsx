@@ -15,6 +15,7 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
   const [history, setHistory] = useState<ServiceRequestStatusHistory[]>([]);
   const [mediaUrls, setMediaUrls] = useState<{ id: string; url: string; mediaType: ServiceRequestMediaType }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isApproving, setIsApproving] = useState(false);
 
   useEffect(() => {
     let isCurrent = true;
@@ -57,6 +58,20 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
     };
   }, [id]);
 
+  async function handleApproveEstimate() {
+    setIsApproving(true);
+    const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    const { data: updated } = await supabase
+      .from("service_requests")
+      .update({ estimate_approved_at: new Date().toISOString(), estimate_approved_by: userData.user?.id, status: "approved" })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (updated) setRequest(updated);
+    setIsApproving(false);
+  }
+
   if (isLoading || !request) {
     return <p className="px-4 py-8 text-gray-700">Loading...</p>;
   }
@@ -71,10 +86,23 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
         <StatusBadge status={request.status} />
         <p className="text-gray-700 mt-2">{request.description}</p>
         {request.estimate_amount != null ? (
-          <p className="font-semibold text-black">
-            Estimate: ${request.estimate_amount}
-            {request.estimate_approved_at ? " (approved)" : " — awaiting your approval"}
-          </p>
+          <div className="mt-2 bg-amber-50 rounded-lg p-4 flex flex-col gap-2">
+            <p className="font-semibold text-black">Estimate: ${request.estimate_amount.toLocaleString()}</p>
+            {request.estimate_approved_at ? (
+              <p className="text-sm text-green-700 font-semibold">✓ Approved {new Date(request.estimate_approved_at).toLocaleDateString()}</p>
+            ) : (
+              <>
+                <p className="text-sm text-gray-700">Work won&apos;t begin until you approve this estimate.</p>
+                <button
+                  onClick={handleApproveEstimate}
+                  disabled={isApproving}
+                  className="self-start min-h-11 rounded-lg bg-green-600 px-5 font-semibold text-white disabled:opacity-70"
+                >
+                  {isApproving ? "Approving..." : "Approve Estimate"}
+                </button>
+              </>
+            )}
+          </div>
         ) : null}
       </div>
 
