@@ -4,14 +4,16 @@ import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { useNetworkStatus } from "../lib/use-network-status";
-import { useBusinessAccount } from "../lib/business-account";
+import { BusinessAccountProvider, useBusinessAccount } from "../lib/business-account";
 import { colors } from "@proven-power/ui-tokens";
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <RootNavigator />
+        <BusinessAccountProvider>
+          <RootNavigator />
+        </BusinessAccountProvider>
       </AuthProvider>
       <StatusBar style="dark" />
     </SafeAreaProvider>

@@ -8,7 +8,7 @@ import { useBusinessAccount } from "../../../lib/business-account";
 
 export default function ChooseStorePage() {
   const router = useRouter();
-  const { businessAccount, isLoading: isLoadingAccount } = useBusinessAccount();
+  const { businessAccount, isLoading: isLoadingAccount, refresh } = useBusinessAccount();
   const [locations, setLocations] = useState<DealershipLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,6 +49,7 @@ export default function ChooseStorePage() {
       setIsSaving(false);
       return;
     }
+    await refresh();
     router.replace("/");
   }
 

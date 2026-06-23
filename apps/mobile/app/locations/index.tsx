@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, Linking, ActivityIndicator } from "r
 import { colors, spacing, radii, typeScale } from "@proven-power/ui-tokens";
 import type { DealershipLocation, DealershipHours } from "@proven-power/shared-types";
 import { supabase } from "../../lib/supabase";
+import { useBusinessAccount } from "../../lib/business-account";
 
 const DAY_LABELS: { key: keyof DealershipHours; label: string }[] = [
   { key: "monday", label: "Mon" },
@@ -23,8 +24,10 @@ function formatTime12Hour(time24: string): string {
 }
 
 export default function LocationsScreen() {
+  const { businessAccount, refresh } = useBusinessAccount();
   const [locations, setLocations] = useState<DealershipLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -37,6 +40,14 @@ export default function LocationsScreen() {
       });
   }, []);
 
+  async function handleMakeHomeStore(locationId: string) {
+    if (!businessAccount) return;
+    setSavingId(locationId);
+    await supabase.from("business_accounts").update({ primary_location_id: locationId }).eq("id", businessAccount.id);
+    await refresh();
+    setSavingId(null);
+  }
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.white }}>
@@ -47,9 +58,18 @@ export default function LocationsScreen() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.white }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
-      {locations.map((loc) => (
+      {locations.map((loc) => {
+        const isHomeStore = businessAccount?.primary_location_id === loc.id;
+        return (
         <View key={loc.id} style={{ padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.gray[300], gap: spacing.sm }}>
-          <Text style={{ fontSize: typeScale.lg, fontWeight: "700", color: colors.black }}>{loc.name}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }}>
+            <Text style={{ fontSize: typeScale.lg, fontWeight: "700", color: colors.black }}>{loc.name}</Text>
+            {isHomeStore ? (
+              <View style={{ backgroundColor: colors.green[50], borderRadius: radii.pill, paddingHorizontal: spacing.sm, paddingVertical: 4 }}>
+                <Text style={{ fontSize: typeScale.xs, color: colors.green[700], fontWeight: "700" }}>Your Home Store</Text>
+              </View>
+            ) : null}
+          </View>
 
           {loc.address ? (
             <Pressable
@@ -93,8 +113,32 @@ export default function LocationsScreen() {
               })}
             </View>
           ) : null}
+
+          {businessAccount && !isHomeStore ? (
+            <Pressable
+              onPress={() => handleMakeHomeStore(loc.id)}
+              disabled={savingId === loc.id}
+              style={({ pressed }) => ({
+                alignSelf: "flex-start",
+                marginTop: spacing.xs,
+                minHeight: 40,
+                paddingHorizontal: spacing.md,
+                borderRadius: radii.md,
+                borderWidth: 1,
+                borderColor: colors.green[500],
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: pressed || savingId === loc.id ? 0.7 : 1,
+              })}
+            >
+              <Text style={{ fontSize: typeScale.sm, color: colors.green[700], fontWeight: "600" }}>
+                {savingId === loc.id ? "Saving..." : "Make this my home store"}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
-      ))}
+        );
+      })}
     </ScrollView>
   );
 }

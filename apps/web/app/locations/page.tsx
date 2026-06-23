@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { DealershipLocation, DealershipHours } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
+import { useBusinessAccount } from "../../lib/business-account";
 
 const DAY_LABELS: { key: keyof DealershipHours; label: string }[] = [
   { key: "monday", label: "Mon" },
@@ -24,8 +25,10 @@ function formatTime12Hour(time24: string): string {
 }
 
 export default function LocationsPage() {
+  const { businessAccount, refresh } = useBusinessAccount();
   const [locations, setLocations] = useState<DealershipLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -39,6 +42,15 @@ export default function LocationsPage() {
       });
   }, []);
 
+  async function handleMakeHomeStore(locationId: string) {
+    if (!businessAccount) return;
+    setSavingId(locationId);
+    const supabase = createClient();
+    await supabase.from("business_accounts").update({ primary_location_id: locationId }).eq("id", businessAccount.id);
+    await refresh();
+    setSavingId(null);
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
       <Link href="/" className="text-sm text-green-700">
@@ -50,9 +62,18 @@ export default function LocationsPage() {
         <p className="text-gray-700">Loading...</p>
       ) : (
         <div className="flex flex-col gap-4">
-          {locations.map((loc) => (
+          {locations.map((loc) => {
+            const isHomeStore = businessAccount?.primary_location_id === loc.id;
+            return (
             <div key={loc.id} className="rounded-lg border border-gray-300 p-4 flex flex-col gap-2">
-              <h2 className="text-lg font-bold text-black">{loc.name}</h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-lg font-bold text-black">{loc.name}</h2>
+                {isHomeStore ? (
+                  <span className="text-xs font-semibold text-green-700 bg-green-50 rounded-full px-3 py-1 shrink-0">
+                    Your Home Store
+                  </span>
+                ) : null}
+              </div>
 
               {loc.address ? (
                 <a
@@ -90,8 +111,19 @@ export default function LocationsPage() {
                   })}
                 </div>
               ) : null}
+
+              {businessAccount && !isHomeStore ? (
+                <button
+                  onClick={() => handleMakeHomeStore(loc.id)}
+                  disabled={savingId === loc.id}
+                  className="self-start mt-1 min-h-10 rounded-lg border border-green-600 px-4 text-sm font-semibold text-green-700 disabled:opacity-70"
+                >
+                  {savingId === loc.id ? "Saving..." : "Make this my home store"}
+                </button>
+              ) : null}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
