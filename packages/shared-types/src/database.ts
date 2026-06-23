@@ -514,6 +514,7 @@ export interface Database {
           status: ServiceRequestStatus;
           assigned_staff_profile_id: string | null;
           estimate_amount: number | null;
+          estimate_notes: string | null;
           estimate_approved_at: string | null;
           estimate_approved_by: string | null;
           created_at: string;
@@ -533,6 +534,7 @@ export interface Database {
           status?: ServiceRequestStatus;
           assigned_staff_profile_id?: string | null;
           estimate_amount?: number | null;
+          estimate_notes?: string | null;
           estimate_approved_at?: string | null;
           estimate_approved_by?: string | null;
         };
@@ -879,6 +881,18 @@ export interface Database {
       notification_rule_enabled: {
         Args: { target_business_account_id: string; target_category: string; target_channel: string };
         Returns: boolean;
+      };
+      approve_service_estimate: {
+        Args: { p_service_request_id: string };
+        Returns: Database["public"]["Tables"]["service_requests"]["Row"];
+      };
+      cancel_service_request: {
+        Args: { p_service_request_id: string };
+        Returns: Database["public"]["Tables"]["service_requests"]["Row"];
+      };
+      cancel_parts_request: {
+        Args: { p_parts_request_id: string };
+        Returns: Database["public"]["Tables"]["parts_requests"]["Row"];
       };
     };
   };

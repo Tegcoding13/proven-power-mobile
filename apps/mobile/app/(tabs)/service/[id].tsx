@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, Pressable, ScrollView, Image, FlatList, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ScrollView, Image, FlatList, ActivityIndicator, Alert } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { colors, spacing, radii, typeScale } from "@proven-power/ui-tokens";
 import type { ServiceRequest, ServiceRequestStatusHistory, Equipment, ServiceRequestMediaType } from "@proven-power/shared-types";
@@ -15,6 +15,8 @@ export default function ServiceRequestDetailScreen() {
   const [mediaUrls, setMediaUrls] = useState<{ id: string; url: string; mediaType: ServiceRequestMediaType }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isApproving, setIsApproving] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -57,15 +59,36 @@ export default function ServiceRequestDetailScreen() {
   async function handleApproveEstimate() {
     if (!id) return;
     setIsApproving(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const { data: updated } = await supabase
-      .from("service_requests")
-      .update({ estimate_approved_at: new Date().toISOString(), estimate_approved_by: userData.user?.id, status: "approved" })
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (updated) setRequest(updated);
+    setErrorMessage(null);
+    const { data: updated, error } = await supabase.rpc("approve_service_estimate", { p_service_request_id: id });
+    if (error) {
+      setErrorMessage(error.message);
+    } else if (updated) {
+      setRequest(updated);
+    }
     setIsApproving(false);
+  }
+
+  function handleCancel() {
+    if (!id) return;
+    Alert.alert("Cancel Request", "Are you sure you want to cancel this service request?", [
+      { text: "No", style: "cancel" },
+      {
+        text: "Yes, Cancel",
+        style: "destructive",
+        onPress: async () => {
+          setIsCancelling(true);
+          setErrorMessage(null);
+          const { data: updated, error } = await supabase.rpc("cancel_service_request", { p_service_request_id: id });
+          if (error) {
+            setErrorMessage(error.message);
+          } else if (updated) {
+            setRequest(updated);
+          }
+          setIsCancelling(false);
+        },
+      },
+    ]);
   }
 
   if (isLoading || !request) {
@@ -84,11 +107,40 @@ export default function ServiceRequestDetailScreen() {
         </Text>
         <StatusBadge status={request.status} />
         <Text style={{ fontSize: typeScale.base, color: colors.gray[700], marginTop: spacing.xs }}>{request.description}</Text>
+
+        {errorMessage ? <Text style={{ color: colors.status.danger, fontSize: typeScale.sm }}>{errorMessage}</Text> : null}
+
+        {request.status === "submitted" ? (
+          <Pressable
+            onPress={handleCancel}
+            disabled={isCancelling}
+            style={({ pressed }) => ({
+              alignSelf: "flex-start",
+              marginTop: spacing.xs,
+              minHeight: 36,
+              paddingHorizontal: spacing.md,
+              borderRadius: radii.md,
+              borderWidth: 1,
+              borderColor: colors.status.danger,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: pressed || isCancelling ? 0.7 : 1,
+            })}
+          >
+            <Text style={{ color: colors.status.danger, fontWeight: "600", fontSize: typeScale.sm }}>
+              {isCancelling ? "Cancelling..." : "Cancel Request"}
+            </Text>
+          </Pressable>
+        ) : null}
+
         {request.estimate_amount != null ? (
           <View style={{ marginTop: spacing.sm, backgroundColor: colors.status.warning + "1A", borderRadius: radii.md, padding: spacing.md, gap: spacing.sm }}>
             <Text style={{ fontSize: typeScale.base, color: colors.black, fontWeight: "700" }}>
               Estimate: ${request.estimate_amount.toLocaleString()}
             </Text>
+            {request.estimate_notes ? (
+              <Text style={{ fontSize: typeScale.sm, color: colors.gray[700] }}>{request.estimate_notes}</Text>
+            ) : null}
             {request.estimate_approved_at ? (
               <Text style={{ fontSize: typeScale.sm, color: colors.green[700], fontWeight: "600" }}>
                 ✓ Approved {new Date(request.estimate_approved_at).toLocaleDateString()}

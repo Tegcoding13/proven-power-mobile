@@ -76,6 +76,7 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
   const [history, setHistory] = useState<ServiceRequestStatusHistory[]>([]);
   const [mediaUrls, setMediaUrls] = useState<{ id: string; url: string; mediaType: ServiceRequestMediaType }[]>([]);
   const [estimateInput, setEstimateInput] = useState("");
+  const [estimateNotesInput, setEstimateNotesInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
       setHistory(result.history);
       setMediaUrls(result.mediaUrls);
       setEstimateInput(result.request?.estimate_amount != null ? String(result.request.estimate_amount) : "");
+      setEstimateNotesInput(result.request?.estimate_notes ?? "");
       setIsLoading(false);
     });
     return () => {
@@ -123,7 +125,11 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
     const supabase = createClient();
     await supabase
       .from("service_requests")
-      .update({ estimate_amount: Number(estimateInput), status: "awaiting_approval" })
+      .update({
+        estimate_amount: Number(estimateInput),
+        estimate_notes: estimateNotesInput.trim() || null,
+        status: "awaiting_approval",
+      })
       .eq("id", id);
     reload();
   }
@@ -166,19 +172,24 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
 
       <section className="flex flex-col gap-2">
         <p className="font-semibold text-black">Estimate</p>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            step="0.01"
-            value={estimateInput}
-            onChange={(e) => setEstimateInput(e.target.value)}
-            placeholder="Amount"
-            className="min-h-10 w-32 rounded-lg border border-gray-300 px-3 text-black"
-          />
-          <button onClick={handleSaveEstimate} className="min-h-10 rounded-lg bg-green-600 px-4 text-sm font-semibold text-white">
-            Send Estimate
-          </button>
-        </div>
+        <input
+          type="number"
+          step="0.01"
+          value={estimateInput}
+          onChange={(e) => setEstimateInput(e.target.value)}
+          placeholder="Amount"
+          className="min-h-10 w-40 rounded-lg border border-gray-300 px-3 text-black"
+        />
+        <textarea
+          value={estimateNotesInput}
+          onChange={(e) => setEstimateNotesInput(e.target.value)}
+          placeholder="What work will be performed for this amount? (shown to the customer)"
+          rows={3}
+          className="rounded-lg border border-gray-300 p-3 text-black"
+        />
+        <button onClick={handleSaveEstimate} className="self-start min-h-10 rounded-lg bg-green-600 px-4 text-sm font-semibold text-white">
+          Send Estimate
+        </button>
         {request.estimate_amount != null ? (
           <p className="text-sm text-gray-700">
             Current: ${request.estimate_amount} {request.estimate_approved_at ? "(approved by customer)" : "(pending approval)"}

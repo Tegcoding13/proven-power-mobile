@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, ScrollView, Image, FlatList, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ScrollView, Image, FlatList, ActivityIndicator, Alert } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { colors, spacing, radii, typeScale } from "@proven-power/ui-tokens";
 import type { PartsRequest } from "@proven-power/shared-types";
@@ -12,6 +12,8 @@ export default function PartsRequestDetailScreen() {
   const [request, setRequest] = useState<PartsRequest | null>(null);
   const [mediaUrls, setMediaUrls] = useState<{ id: string; url: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -34,6 +36,28 @@ export default function PartsRequestDetailScreen() {
     }, [load])
   );
 
+  function handleCancel() {
+    if (!id) return;
+    Alert.alert("Cancel Request", "Are you sure you want to cancel this parts request?", [
+      { text: "No", style: "cancel" },
+      {
+        text: "Yes, Cancel",
+        style: "destructive",
+        onPress: async () => {
+          setIsCancelling(true);
+          setErrorMessage(null);
+          const { data: updated, error } = await supabase.rpc("cancel_parts_request", { p_parts_request_id: id });
+          if (error) {
+            setErrorMessage(error.message);
+          } else if (updated) {
+            setRequest(updated);
+          }
+          setIsCancelling(false);
+        },
+      },
+    ]);
+  }
+
   if (isLoading || !request) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.white }}>
@@ -47,6 +71,31 @@ export default function PartsRequestDetailScreen() {
       <View style={{ gap: spacing.xs }}>
         <StatusBadge status={request.status} />
         <Text style={{ fontSize: typeScale.lg, color: colors.black, marginTop: spacing.xs }}>{request.description}</Text>
+
+        {errorMessage ? <Text style={{ color: colors.status.danger, fontSize: typeScale.sm }}>{errorMessage}</Text> : null}
+
+        {request.status === "submitted" ? (
+          <Pressable
+            onPress={handleCancel}
+            disabled={isCancelling}
+            style={({ pressed }) => ({
+              alignSelf: "flex-start",
+              marginTop: spacing.xs,
+              minHeight: 36,
+              paddingHorizontal: spacing.md,
+              borderRadius: radii.md,
+              borderWidth: 1,
+              borderColor: colors.status.danger,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: pressed || isCancelling ? 0.7 : 1,
+            })}
+          >
+            <Text style={{ color: colors.status.danger, fontWeight: "600", fontSize: typeScale.sm }}>
+              {isCancelling ? "Cancelling..." : "Cancel Request"}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {mediaUrls.length > 0 ? (

@@ -16,6 +16,8 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
   const [mediaUrls, setMediaUrls] = useState<{ id: string; url: string; mediaType: ServiceRequestMediaType }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isApproving, setIsApproving] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -60,16 +62,29 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
 
   async function handleApproveEstimate() {
     setIsApproving(true);
+    setErrorMessage(null);
     const supabase = createClient();
-    const { data: userData } = await supabase.auth.getUser();
-    const { data: updated } = await supabase
-      .from("service_requests")
-      .update({ estimate_approved_at: new Date().toISOString(), estimate_approved_by: userData.user?.id, status: "approved" })
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (updated) setRequest(updated);
+    const { data: updated, error } = await supabase.rpc("approve_service_estimate", { p_service_request_id: id });
+    if (error) {
+      setErrorMessage(error.message);
+    } else if (updated) {
+      setRequest(updated);
+    }
     setIsApproving(false);
+  }
+
+  async function handleCancel() {
+    if (!confirm("Cancel this service request?")) return;
+    setIsCancelling(true);
+    setErrorMessage(null);
+    const supabase = createClient();
+    const { data: updated, error } = await supabase.rpc("cancel_service_request", { p_service_request_id: id });
+    if (error) {
+      setErrorMessage(error.message);
+    } else if (updated) {
+      setRequest(updated);
+    }
+    setIsCancelling(false);
   }
 
   if (isLoading || !request) {
@@ -81,13 +96,27 @@ export default function ServiceRequestDetailPage({ params }: { params: Promise<{
       <Link href="/service" className="text-sm text-green-700">
         ← Back to Service
       </Link>
+      {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-black">{equipment?.nickname || equipment?.model || "Service Request"}</h1>
         <StatusBadge status={request.status} />
         <p className="text-gray-700 mt-2">{request.description}</p>
+
+        {request.status === "submitted" ? (
+          <button
+            onClick={handleCancel}
+            disabled={isCancelling}
+            className="self-start mt-1 min-h-9 rounded-lg border border-red-600 px-3 text-sm font-semibold text-red-600 disabled:opacity-70"
+          >
+            {isCancelling ? "Cancelling..." : "Cancel Request"}
+          </button>
+        ) : null}
+
         {request.estimate_amount != null ? (
           <div className="mt-2 bg-amber-50 rounded-lg p-4 flex flex-col gap-2">
             <p className="font-semibold text-black">Estimate: ${request.estimate_amount.toLocaleString()}</p>
+            {request.estimate_notes ? <p className="text-sm text-gray-700">{request.estimate_notes}</p> : null}
             {request.estimate_approved_at ? (
               <p className="text-sm text-green-700 font-semibold">✓ Approved {new Date(request.estimate_approved_at).toLocaleDateString()}</p>
             ) : (
