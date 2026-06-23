@@ -39,6 +39,7 @@ function RootNavigator() {
         <Stack.Screen name="locations" options={{ presentation: "card" }} />
         <Stack.Screen name="deals" options={{ presentation: "card" }} />
         <Stack.Screen name="notifications" options={{ presentation: "card" }} />
+        <Stack.Screen name="team" options={{ presentation: "card" }} />
       </Stack.Protected>
 
       <Stack.Protected guard={!session}>

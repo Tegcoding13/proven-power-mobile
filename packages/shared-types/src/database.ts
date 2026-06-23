@@ -125,7 +125,8 @@ export interface Database {
         Row: {
           id: string;
           business_account_id: string;
-          profile_id: string;
+          profile_id: string | null;
+          invited_email: string | null;
           role: BusinessAccountRole;
           invited_by: string | null;
           status: BusinessAccountMemberStatus;
@@ -134,7 +135,8 @@ export interface Database {
         Insert: {
           id?: string;
           business_account_id: string;
-          profile_id: string;
+          profile_id?: string | null;
+          invited_email?: string | null;
           role: BusinessAccountRole;
           invited_by?: string | null;
           status?: BusinessAccountMemberStatus;
@@ -877,6 +879,10 @@ export interface Database {
       notification_rule_enabled: {
         Args: { target_business_account_id: string; target_category: string; target_channel: string };
         Returns: boolean;
+      };
+      invite_team_member: {
+        Args: { p_business_account_id: string; p_email: string; p_role: string };
+        Returns: Database["public"]["Tables"]["business_account_members"]["Row"];
       };
     };
   };

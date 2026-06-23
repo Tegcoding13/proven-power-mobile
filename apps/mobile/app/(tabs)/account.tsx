@@ -28,7 +28,7 @@ export default function AccountScreen() {
   const settingsRows = [
     { label: "Notification Preferences", onPress: () => Alert.alert("Coming Soon", "Notification preferences are coming soon.") },
     { label: "Payment Methods", onPress: () => Alert.alert("Coming Soon", "Payment methods are coming soon.") },
-    { label: "Business Account & Team", onPress: () => Alert.alert("Coming Soon", "Multi-user account management is coming soon.") },
+    { label: "Business Account & Team", onPress: () => router.push("/team") },
     { label: "Locations & Contact", onPress: () => router.push("/locations") },
   ];
 
