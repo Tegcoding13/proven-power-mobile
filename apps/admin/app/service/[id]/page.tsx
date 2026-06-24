@@ -45,11 +45,17 @@ async function fetchServiceRequestData(id: string) {
     supabase.from("business_accounts").select("*").eq("id", requestRow.business_account_id).single(),
     supabase
       .from("service_request_status_history")
-      .select("*, changed_by:profiles!changed_by_profile_id(full_name)")
+      .select("*")
       .eq("service_request_id", id)
       .order("created_at", { ascending: false }),
     supabase.from("service_request_media").select("*").eq("service_request_id", id),
   ]);
+
+  const changerIds = [...new Set((historyRows ?? []).map((h) => h.changed_by_profile_id).filter(Boolean))] as string[];
+  const { data: changerProfiles } = changerIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", changerIds)
+    : { data: [] };
+  const profileNameById = new Map((changerProfiles ?? []).map((p) => [p.id, p.full_name]));
 
   const urls = await Promise.all(
     (mediaRows ?? []).map(async (m) => ({
@@ -63,7 +69,8 @@ async function fetchServiceRequestData(id: string) {
     request: requestRow,
     equipment: equipmentRow ?? null,
     account: accountRow ?? null,
-    history: (historyRows ?? []) as (ServiceRequestStatusHistory & { changed_by: { full_name: string | null } | null })[],
+    history: historyRows ?? [],
+    profileNameById,
     mediaUrls: urls.filter((u): u is { id: string; url: string; mediaType: ServiceRequestMediaType } => Boolean(u.url)),
   };
 }
@@ -74,6 +81,7 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [account, setAccount] = useState<BusinessAccount | null>(null);
   const [history, setHistory] = useState<ServiceRequestStatusHistory[]>([]);
+  const [profileNameById, setProfileNameById] = useState<Map<string, string | null>>(new Map());
   const [mediaUrls, setMediaUrls] = useState<{ id: string; url: string; mediaType: ServiceRequestMediaType }[]>([]);
   const [estimateInput, setEstimateInput] = useState("");
   const [estimateNotesInput, setEstimateNotesInput] = useState("");
@@ -87,6 +95,7 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
       setEquipment(result.equipment);
       setAccount(result.account);
       setHistory(result.history);
+      setProfileNameById(result.profileNameById ?? new Map());
       setMediaUrls(result.mediaUrls);
       setEstimateInput(result.request?.estimate_amount != null ? String(result.request.estimate_amount) : "");
       setEstimateNotesInput(result.request?.estimate_notes ?? "");
@@ -218,7 +227,9 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
           {history.map((entry) => (
             <li key={entry.id} className="flex items-center justify-between border-b border-gray-100 py-2 gap-3">
               <StatusBadge status={entry.status} />
-              <span className="text-xs text-gray-500 flex-1">{entry.changed_by?.full_name ?? "System"}</span>
+              <span className="text-xs text-gray-500 flex-1">
+                {entry.changed_by_profile_id ? (profileNameById.get(entry.changed_by_profile_id) ?? "Unknown") : "System"}
+              </span>
               <span className="text-xs text-gray-700 whitespace-nowrap">{new Date(entry.created_at).toLocaleString()}</span>
             </li>
           ))}
