@@ -16,7 +16,7 @@ const REQUEST_TYPES: { value: ServiceRequestType; label: string }[] = [
 const COMMON_SERVICES = [
   "Oil & Filter Change",
   "Annual Tune-Up",
-  "Blade Sharpening / Replacement",
+  "Blade Sharpening",
   "Belt Replacement",
   "Battery Replacement",
   "Air Filter Service",
@@ -168,7 +168,7 @@ export default function NewServiceRequestPage() {
                       isSelected ? prev.filter((s) => s !== service) : [...prev, service]
                     )
                   }
-                  className={`rounded-full px-3 py-2 text-sm font-medium border transition-colors text-center ${
+                  className={`h-11 rounded-full px-3 text-sm font-medium border transition-colors text-center flex items-center justify-center ${
                     isSelected
                       ? "bg-green-600 text-white border-green-600"
                       : "bg-white text-gray-700 border-gray-300 hover:border-green-400"

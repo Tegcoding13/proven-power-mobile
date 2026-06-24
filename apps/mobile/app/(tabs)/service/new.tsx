@@ -17,7 +17,7 @@ const REQUEST_TYPES: { value: ServiceRequestType; label: string }[] = [
 const COMMON_SERVICES = [
   "Oil & Filter Change",
   "Annual Tune-Up",
-  "Blade Sharpening / Replacement",
+  "Blade Sharpening",
   "Belt Replacement",
   "Battery Replacement",
   "Air Filter Service",
