@@ -272,8 +272,12 @@ export default function NewWinterStorageSignupPage() {
       setErrorMessage("Pick equipment before submitting.");
       return;
     }
-    if (!selectedDropoffDate || !selectedPickupDate) {
-      setErrorMessage("Select a drop-off date and a pick-up date.");
+    if (!selectedDropoffDate) {
+      setErrorMessage("Select a drop-off date.");
+      return;
+    }
+    if (pickupOptions.length > 0 && !selectedPickupDate) {
+      setErrorMessage("Select a pick-up date.");
       return;
     }
     if (!agreed) {
@@ -310,6 +314,8 @@ export default function NewWinterStorageSignupPage() {
   }
 
   const hasDates = dropoffOptions.length > 0 || pickupOptions.length > 0;
+  const pickupRequired = pickupOptions.length > 0;
+  const canSubmit = !!equipmentId && !!selectedDropoffDate && (!pickupRequired || !!selectedPickupDate) && agreed && !isSubmitting && !isLoadingAccount;
 
   return (
     <div className="flex flex-1 flex-col gap-4 px-4 py-8 max-w-lg mx-auto w-full">
@@ -374,7 +380,7 @@ export default function NewWinterStorageSignupPage() {
               />
             )}
 
-            {pickupOptions.length > 0 && (
+            {pickupOptions.length > 0 ? (
               <DayPicker
                 label="Choose Pick-up Date"
                 dayType="pickup"
@@ -382,6 +388,10 @@ export default function NewWinterStorageSignupPage() {
                 selectedDate={selectedPickupDate}
                 onSelect={(date, id) => { setSelectedPickupDate(date); setSelectedPickupDayId(id); }}
               />
+            ) : (
+              <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-4 py-3">
+                Pick-up dates haven't been set yet — the dealership will contact you to schedule pick-up.
+              </p>
             )}
           </>
         )}
@@ -401,7 +411,7 @@ export default function NewWinterStorageSignupPage() {
 
         <button
           type="submit"
-          disabled={!equipmentId || !selectedDropoffDate || !selectedPickupDate || !agreed || isSubmitting || isLoadingAccount}
+          disabled={!canSubmit}
           className="min-h-12 rounded-lg bg-green-600 text-white font-semibold disabled:opacity-70"
         >
           {isSubmitting ? "Submitting..." : "Sign Up"}

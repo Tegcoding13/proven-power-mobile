@@ -79,17 +79,17 @@ function DayCalendar({
         </Text>
       ) : null}
 
-      <View style={{ borderRadius: radii.md, borderWidth: 1, borderColor: colors.gray[200], overflow: "hidden", backgroundColor: colors.white }}>
+      <View style={{ borderRadius: radii.md, borderWidth: 1, borderColor: colors.gray[300], overflow: "hidden", backgroundColor: colors.white }}>
         {/* Month nav */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: spacing.sm, backgroundColor: colors.gray[50], borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}>
           <Pressable onPress={prev} style={{ padding: spacing.xs }}>
-            <Text style={{ fontSize: typeScale.lg, color: colors.gray[600] }}>‹</Text>
+            <Text style={{ fontSize: typeScale.lg, color: colors.gray[500] }}>‹</Text>
           </Pressable>
-          <Text style={{ fontSize: typeScale.sm, fontWeight: "600", color: colors.gray[800] }}>
+          <Text style={{ fontSize: typeScale.sm, fontWeight: "600", color: colors.gray[700] }}>
             {MONTH_NAMES[calMonth]} {calYear}
           </Text>
           <Pressable onPress={next} style={{ padding: spacing.xs }}>
-            <Text style={{ fontSize: typeScale.lg, color: colors.gray[600] }}>›</Text>
+            <Text style={{ fontSize: typeScale.lg, color: colors.gray[500] }}>›</Text>
           </Pressable>
         </View>
 
@@ -97,7 +97,7 @@ function DayCalendar({
         <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}>
           {DAY_INITIALS.map((d, i) => (
             <View key={i} style={{ flex: 1, alignItems: "center", paddingVertical: spacing.xs }}>
-              <Text style={{ fontSize: 10, color: colors.gray[400], fontWeight: "600" }}>{d}</Text>
+              <Text style={{ fontSize: 10, color: colors.gray[300], fontWeight: "600" }}>{d}</Text>
             </View>
           ))}
         </View>
@@ -283,8 +283,12 @@ export default function NewWinterStorageSignupScreen() {
       setErrorMessage("Pick equipment before submitting.");
       return;
     }
-    if (!selectedDropoffDate || !selectedPickupDate) {
-      setErrorMessage("Select a drop-off date and a pick-up date.");
+    if (!selectedDropoffDate) {
+      setErrorMessage("Select a drop-off date.");
+      return;
+    }
+    if (pickupOptions.length > 0 && !selectedPickupDate) {
+      setErrorMessage("Select a pick-up date.");
       return;
     }
     if (!agreed) {
@@ -317,7 +321,8 @@ export default function NewWinterStorageSignupScreen() {
     router.replace("/winter-storage");
   }
 
-  const canSubmit = !!equipmentId && !!selectedDropoffDate && !!selectedPickupDate && agreed && !isSubmitting && !isLoadingAccount;
+  const pickupRequired = pickupOptions.length > 0;
+  const canSubmit = !!equipmentId && !!selectedDropoffDate && (!pickupRequired || !!selectedPickupDate) && agreed && !isSubmitting && !isLoadingAccount;
   const hasDates = dropoffOptions.length > 0 || pickupOptions.length > 0;
 
   return (
@@ -355,7 +360,7 @@ export default function NewWinterStorageSignupScreen() {
       {/* Zip / zone lookup */}
       <View style={{ gap: spacing.xs }}>
         <Text style={{ fontSize: typeScale.base, fontWeight: "600", color: colors.black }}>Your Zip Code</Text>
-        <Text style={{ fontSize: typeScale.sm, color: colors.gray[600] }}>
+        <Text style={{ fontSize: typeScale.sm, color: colors.gray[500] }}>
           {businessAccount?.zip ? "Auto-populated from your profile." : "Enter your zip to find available dates."}
         </Text>
         <View style={{ flexDirection: "row", gap: spacing.sm }}>
@@ -410,7 +415,7 @@ export default function NewWinterStorageSignupScreen() {
               onSelect={(date, id) => { setSelectedDropoffDate(date); setSelectedDropoffDayId(id); }}
             />
           )}
-          {pickupOptions.length > 0 && (
+          {pickupOptions.length > 0 ? (
             <DayCalendar
               label="Choose Pick-up Date"
               dayType="pickup"
@@ -418,6 +423,12 @@ export default function NewWinterStorageSignupScreen() {
               selectedDate={selectedPickupDate}
               onSelect={(date, id) => { setSelectedPickupDate(date); setSelectedPickupDayId(id); }}
             />
+          ) : (
+            <View style={{ backgroundColor: colors.gray[50], borderRadius: radii.md, padding: spacing.md }}>
+              <Text style={{ fontSize: typeScale.sm, color: colors.gray[500] }}>
+                Pick-up dates haven't been set yet — the dealership will contact you to schedule pick-up.
+              </Text>
+            </View>
           )}
         </>
       )}
