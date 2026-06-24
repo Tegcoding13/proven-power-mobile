@@ -110,7 +110,10 @@ export default function ServiceQueuePage() {
                 <td className="py-3">
                   <StatusBadge status={r.status} />
                 </td>
-                <td className="py-3 text-gray-700">{new Date(r.created_at).toLocaleDateString()}</td>
+                <td className="py-3 text-gray-700 whitespace-nowrap">
+                  <div>{new Date(r.created_at).toLocaleDateString()}</div>
+                  <div className="text-xs text-gray-500">{new Date(r.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}</div>
+                </td>
               </tr>
             ))}
           </tbody>
