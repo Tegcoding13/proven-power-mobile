@@ -156,7 +156,7 @@ export default function NewServiceRequestPage() {
 
         <div>
           <p className="font-semibold text-black mb-2">Common Services</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {COMMON_SERVICES.map((service) => {
               const isSelected = selectedServices.includes(service);
               return (
@@ -168,7 +168,7 @@ export default function NewServiceRequestPage() {
                       isSelected ? prev.filter((s) => s !== service) : [...prev, service]
                     )
                   }
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium border transition-colors ${
+                  className={`rounded-full px-3 py-2 text-sm font-medium border transition-colors text-center ${
                     isSelected
                       ? "bg-green-600 text-white border-green-600"
                       : "bg-white text-gray-700 border-gray-300 hover:border-green-400"
