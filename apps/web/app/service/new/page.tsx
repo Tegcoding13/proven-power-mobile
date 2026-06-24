@@ -191,13 +191,19 @@ export default function NewServiceRequestPage() {
 
         <div>
           <p className="font-semibold text-black mb-2">Photos/Video</p>
-          <input
-            type="file"
-            accept="image/*,video/*"
-            multiple
-            onChange={(e) => setMediaFiles(Array.from(e.target.files ?? []))}
-            className="text-sm text-black"
-          />
+          <label className="flex items-center justify-center gap-2 min-h-12 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors">
+            <span className="text-lg">📎</span>
+            <span className="text-sm font-medium text-gray-600">
+              {mediaFiles.length > 0 ? `${mediaFiles.length} file${mediaFiles.length > 1 ? "s" : ""} selected` : "Add Photos / Video"}
+            </span>
+            <input
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={(e) => setMediaFiles(Array.from(e.target.files ?? []))}
+              className="sr-only"
+            />
+          </label>
         </div>
 
         {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
