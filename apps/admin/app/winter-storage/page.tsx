@@ -13,7 +13,6 @@ import type {
 import { createClient } from "../../lib/supabase/client";
 
 type EnrichedSignup = WinterStorageSignup & { accountName: string; equipmentLabel: string };
-
 type DayAvailability = StorageCalendarDay & { bookedSlots: number; isFull: boolean };
 
 const MONTHS = [
@@ -61,6 +60,27 @@ function getMiniCalendarGrid(year: number, month: number): (number | null)[] {
   return grid;
 }
 
+function formatDateShort(dateStr: string) {
+  return new Date(dateStr + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+type ManualBookingForm = {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  unit: string;
+  serialNumber: string;
+  tagNumber: string;
+  dropoffDayId: string;
+  pickupDayId: string;
+  status: WinterStorageStatus;
+};
+
+function emptyForm(dropoffId = "", pickupId = ""): ManualBookingForm {
+  return { name: "", phone: "", email: "", address: "", unit: "", serialNumber: "", tagNumber: "", dropoffDayId: dropoffId, pickupDayId: pickupId, status: "confirmed" };
+}
+
 export default function AdminWinterStoragePage() {
   const today = useMemo(() => new Date(), []);
 
@@ -74,10 +94,16 @@ export default function AdminWinterStoragePage() {
   const [zones, setZones] = useState<StorageZone[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Add-day modal state
+  // Add-day modal
   const [addDayModal, setAddDayModal] = useState<{ date: Date; dayType: "dropoff" | "pickup" } | null>(null);
   const [addDaySlots, setAddDaySlots] = useState(10);
   const [isSavingDay, setIsSavingDay] = useState(false);
+
+  // Manual booking modal
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [manualForm, setManualForm] = useState<ManualBookingForm>(emptyForm());
+  const [isSavingManual, setIsSavingManual] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -89,8 +115,8 @@ export default function AdminWinterStoragePage() {
 
     setZones(zoneRows ?? []);
 
-    const accountIds = [...new Set((signupRows ?? []).map((s) => s.business_account_id))];
-    const equipmentIds = [...new Set((signupRows ?? []).map((s) => s.equipment_id))];
+    const accountIds = [...new Set((signupRows ?? []).map((s) => s.business_account_id).filter(Boolean))] as string[];
+    const equipmentIds = [...new Set((signupRows ?? []).map((s) => s.equipment_id).filter(Boolean))] as string[];
     const [{ data: accountRows }, { data: equipmentRows }] = await Promise.all([
       accountIds.length
         ? supabase.from("business_accounts").select("*").in("id", accountIds)
@@ -104,12 +130,15 @@ export default function AdminWinterStoragePage() {
 
     const enrichedSignups: EnrichedSignup[] = (signupRows ?? []).map((s) => ({
       ...s,
-      accountName: accountById.get(s.business_account_id)?.name ?? "Customer",
-      equipmentLabel: equipmentById.get(s.equipment_id)?.nickname || equipmentById.get(s.equipment_id)?.model || "Equipment",
+      accountName: s.is_manual_booking
+        ? (s.manual_customer_name ?? "Manual Booking")
+        : (s.business_account_id ? (accountById.get(s.business_account_id)?.name ?? "Customer") : "Customer"),
+      equipmentLabel: s.is_manual_booking
+        ? (s.manual_unit ?? "—")
+        : (s.equipment_id ? (equipmentById.get(s.equipment_id)?.nickname || equipmentById.get(s.equipment_id)?.model || "Equipment") : "Equipment"),
     }));
     setSignups(enrichedSignups);
 
-    // Compute booked slots per calendar day
     const enrichedDays: DayAvailability[] = (calRows ?? []).map((d) => {
       const booked = enrichedSignups.filter((s) => {
         if (s.status === "cancelled") return false;
@@ -122,19 +151,10 @@ export default function AdminWinterStoragePage() {
     setIsLoading(false);
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
-  const grid = useMemo(
-    () => getCalendarGrid(currentMonth.getFullYear(), currentMonth.getMonth()),
-    [currentMonth]
-  );
-
-  const miniGrid = useMemo(
-    () => getMiniCalendarGrid(currentMonth.getFullYear(), currentMonth.getMonth()),
-    [currentMonth]
-  );
+  const grid = useMemo(() => getCalendarGrid(currentMonth.getFullYear(), currentMonth.getMonth()), [currentMonth]);
+  const miniGrid = useMemo(() => getMiniCalendarGrid(currentMonth.getFullYear(), currentMonth.getMonth()), [currentMonth]);
 
   const calendarDayMap = useMemo(() => {
     const map = new Map<string, DayAvailability[]>();
@@ -149,9 +169,10 @@ export default function AdminWinterStoragePage() {
 
   function signupsForDay(date: Date): { dropoffs: EnrichedSignup[]; pickups: EnrichedSignup[] } {
     const dateStr = toDateStr(date);
-    const dropoffs = signups.filter((s) => s.requested_dropoff_date === dateStr);
-    const pickups = signups.filter((s) => s.requested_pickup_date === dateStr);
-    return { dropoffs, pickups };
+    return {
+      dropoffs: signups.filter((s) => s.requested_dropoff_date === dateStr),
+      pickups: signups.filter((s) => s.requested_pickup_date === dateStr),
+    };
   }
 
   async function handleToggleFull(dayId: string, currentValue: boolean) {
@@ -171,13 +192,7 @@ export default function AdminWinterStoragePage() {
     setIsSavingDay(true);
     const supabase = createClient();
     await supabase.from("storage_calendar_days").upsert(
-      {
-        zone_id: zoneFilter !== "all" ? zoneFilter : null,
-        date: toDateStr(addDayModal.date),
-        day_type: addDayModal.dayType,
-        max_slots: addDaySlots,
-        is_manually_full: false,
-      },
+      { zone_id: zoneFilter !== "all" ? zoneFilter : null, date: toDateStr(addDayModal.date), day_type: addDayModal.dayType, max_slots: addDaySlots, is_manually_full: false },
       { onConflict: "zone_id,date,day_type", ignoreDuplicates: false }
     );
     setAddDayModal(null);
@@ -191,22 +206,62 @@ export default function AdminWinterStoragePage() {
     await load();
   }
 
-  function prevMonth() {
-    setCurrentMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1));
-    setSelectedDay(null);
+  async function handleAddManualBooking() {
+    setManualError(null);
+    if (!manualForm.name.trim()) { setManualError("Customer name is required."); return; }
+    if (!manualForm.unit.trim()) { setManualError("Unit is required."); return; }
+    if (!manualForm.dropoffDayId && !manualForm.pickupDayId) { setManualError("Select at least a drop-off or pick-up date."); return; }
+
+    setIsSavingManual(true);
+    const supabase = createClient();
+
+    const dropoffDay = calendarDays.find((d) => d.id === manualForm.dropoffDayId);
+    const pickupDay = calendarDays.find((d) => d.id === manualForm.pickupDayId);
+
+    const { error } = await supabase.from("winter_storage_signups").insert({
+      is_manual_booking: true,
+      status: manualForm.status,
+      requested_dropoff_date: dropoffDay?.date ?? null,
+      requested_pickup_date: pickupDay?.date ?? null,
+      dropoff_calendar_day_id: manualForm.dropoffDayId || null,
+      pickup_calendar_day_id: manualForm.pickupDayId || null,
+      manual_customer_name: manualForm.name.trim(),
+      manual_customer_phone: manualForm.phone.trim() || null,
+      manual_customer_email: manualForm.email.trim() || null,
+      manual_customer_address: manualForm.address.trim() || null,
+      manual_unit: manualForm.unit.trim(),
+      manual_serial_number: manualForm.serialNumber.trim() || null,
+      manual_tag_number: manualForm.tagNumber.trim() || null,
+    });
+
+    setIsSavingManual(false);
+    if (error) { setManualError(error.message); return; }
+    setShowManualModal(false);
+    setManualForm(emptyForm());
+    await load();
   }
-  function nextMonth() {
-    setCurrentMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1));
-    setSelectedDay(null);
+
+  function openManualModal() {
+    // Pre-fill dates based on selected day
+    const dateStr = selectedDay ? toDateStr(selectedDay) : null;
+    const dayEvents = dateStr ? (calendarDayMap.get(dateStr) ?? []) : [];
+    const dropoffDay = dayEvents.find((d) => d.day_type === "dropoff");
+    const pickupDay = dayEvents.find((d) => d.day_type === "pickup");
+    setManualForm(emptyForm(dropoffDay?.id ?? "", pickupDay?.id ?? ""));
+    setManualError(null);
+    setShowManualModal(true);
   }
-  function goToday() {
-    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelectedDay(today);
-  }
+
+  function prevMonth() { setCurrentMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setSelectedDay(null); }
+  function nextMonth() { setCurrentMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setSelectedDay(null); }
+  function goToday() { setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1)); setSelectedDay(today); }
 
   const selectedDaySignups = selectedDay ? signupsForDay(selectedDay) : null;
   const selectedDateStr = selectedDay ? toDateStr(selectedDay) : null;
   const selectedCalDays = selectedDateStr ? (calendarDayMap.get(selectedDateStr) ?? []) : [];
+
+  const dropoffDayOptions = calendarDays.filter((d) => d.day_type === "dropoff").sort((a, b) => a.date.localeCompare(b.date));
+  const pickupDayOptions = calendarDays.filter((d) => d.day_type === "pickup").sort((a, b) => a.date.localeCompare(b.date));
 
   const allSignupsForList = [...signups].sort((a, b) => {
     const dateA = a.requested_dropoff_date ?? a.created_at;
@@ -223,29 +278,23 @@ export default function AdminWinterStoragePage() {
           <h1 className="text-xl font-bold text-gray-900">Winter Storage</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={openManualModal}
+            className="min-h-9 rounded-lg bg-green-600 px-4 text-sm font-semibold text-white"
+          >
+            + Add Customer
+          </button>
           <select
             value={zoneFilter}
             onChange={(e) => setZoneFilter(e.target.value)}
             className="min-h-9 rounded-lg border border-gray-300 px-3 text-sm text-black bg-white"
           >
             <option value="all">All Zones</option>
-            {zones.map((z) => (
-              <option key={z.id} value={z.id}>{z.name}</option>
-            ))}
+            {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
           </select>
           <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm">
-            <button
-              onClick={() => setView("calendar")}
-              className={`min-h-9 px-4 font-semibold ${view === "calendar" ? "bg-green-600 text-white" : "bg-white text-black"}`}
-            >
-              Calendar
-            </button>
-            <button
-              onClick={() => setView("list")}
-              className={`min-h-9 px-4 font-semibold border-l border-gray-300 ${view === "list" ? "bg-green-600 text-white" : "bg-white text-black"}`}
-            >
-              List
-            </button>
+            <button onClick={() => setView("calendar")} className={`min-h-9 px-4 font-semibold ${view === "calendar" ? "bg-green-600 text-white" : "bg-white text-black"}`}>Calendar</button>
+            <button onClick={() => setView("list")} className={`min-h-9 px-4 font-semibold border-l border-gray-300 ${view === "list" ? "bg-green-600 text-white" : "bg-white text-black"}`}>List</button>
           </div>
         </div>
       </div>
@@ -263,8 +312,20 @@ export default function AdminWinterStoragePage() {
                 <li key={s.id} className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col gap-2">
                   <div className="flex items-start justify-between gap-2 flex-wrap">
                     <div>
-                      <p className="font-semibold text-black">{s.accountName}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-black">{s.accountName}</p>
+                        {s.is_manual_booking && <span className="text-[10px] bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded">MANUAL</span>}
+                      </div>
                       <p className="text-sm text-gray-600">{s.equipmentLabel}</p>
+                      {s.is_manual_booking && (
+                        <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                          {s.manual_serial_number && <p>S/N: {s.manual_serial_number}</p>}
+                          {s.manual_tag_number && <p>Tag: {s.manual_tag_number}</p>}
+                          {s.manual_customer_phone && <p>📞 {s.manual_customer_phone}</p>}
+                          {s.manual_customer_email && <p>✉ {s.manual_customer_email}</p>}
+                          {s.manual_customer_address && <p>📍 {s.manual_customer_address}</p>}
+                        </div>
+                      )}
                     </div>
                     <span className={`text-xs font-semibold px-2 py-1 rounded-full ${STATUS_STYLES[s.status]}`}>
                       {s.status.replace(/_/g, " ")}
@@ -272,20 +333,15 @@ export default function AdminWinterStoragePage() {
                   </div>
                   {(s.requested_dropoff_date || s.requested_pickup_date) && (
                     <p className="text-sm text-gray-600">
-                      {s.requested_dropoff_date ? `Drop-off: ${new Date(s.requested_dropoff_date + "T12:00:00").toLocaleDateString()}` : ""}
+                      {s.requested_dropoff_date ? `Drop-off: ${formatDateShort(s.requested_dropoff_date)}` : ""}
                       {s.requested_dropoff_date && s.requested_pickup_date ? "  ·  " : ""}
-                      {s.requested_pickup_date ? `Pick-up: ${new Date(s.requested_pickup_date + "T12:00:00").toLocaleDateString()}` : ""}
+                      {s.requested_pickup_date ? `Pick-up: ${formatDateShort(s.requested_pickup_date)}` : ""}
                     </p>
                   )}
                   <div className="flex flex-wrap gap-1 mt-1">
                     {STATUSES.map((st) => (
-                      <button
-                        key={st}
-                        onClick={() => handleStatusChange(s.id, st)}
-                        className={`min-h-8 rounded-full px-3 text-xs font-semibold capitalize ${
-                          s.status === st ? "bg-green-600 text-white" : "bg-gray-100 text-black"
-                        }`}
-                      >
+                      <button key={st} onClick={() => handleStatusChange(s.id, st)}
+                        className={`min-h-8 rounded-full px-3 text-xs font-semibold capitalize ${s.status === st ? "bg-green-600 text-white" : "bg-gray-100 text-black"}`}>
                         {st.replace(/_/g, " ")}
                       </button>
                     ))}
@@ -300,33 +356,25 @@ export default function AdminWinterStoragePage() {
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
           <div className="hidden lg:flex flex-col w-56 bg-white border-r border-gray-200 p-4 gap-4 shrink-0">
-            {/* Mini calendar */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-gray-700">
-                  {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                </span>
+                <span className="text-xs font-semibold text-gray-700">{MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}</span>
                 <div className="flex gap-1">
                   <button onClick={prevMonth} className="p-1 rounded hover:bg-gray-100 text-gray-600 text-xs">‹</button>
                   <button onClick={nextMonth} className="p-1 rounded hover:bg-gray-100 text-gray-600 text-xs">›</button>
                 </div>
               </div>
               <div className="grid grid-cols-7 text-center">
-                {WEEKDAYS_MINI.map((d, i) => (
-                  <span key={i} className="text-[10px] text-gray-400 font-semibold pb-1">{d}</span>
-                ))}
+                {WEEKDAYS_MINI.map((d, i) => <span key={i} className="text-[10px] text-gray-400 font-semibold pb-1">{d}</span>)}
                 {miniGrid.map((day, i) => {
                   if (day === null) return <span key={i} />;
                   const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
                   const isToday = isSameDay(date, today);
                   const isSelected = selectedDay ? isSameDay(date, selectedDay) : false;
                   return (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedDay(date)}
+                    <button key={i} onClick={() => setSelectedDay(date)}
                       className={`text-[11px] w-6 h-6 mx-auto rounded-full flex items-center justify-center
-                        ${isSelected ? "bg-green-600 text-white" : isToday ? "bg-green-100 text-green-800 font-bold" : "text-gray-700 hover:bg-gray-100"}`}
-                    >
+                        ${isSelected ? "bg-green-600 text-white" : isToday ? "bg-green-100 text-green-800 font-bold" : "text-gray-700 hover:bg-gray-100"}`}>
                       {day}
                     </button>
                   );
@@ -334,81 +382,46 @@ export default function AdminWinterStoragePage() {
               </div>
             </div>
 
-            {/* Legend */}
             <div className="flex flex-col gap-1">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Legend</p>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-sm bg-green-500 shrink-0" />
-                <span className="text-xs text-gray-700">Drop-offs</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-sm bg-blue-500 shrink-0" />
-                <span className="text-xs text-gray-700">Pick-ups</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-sm bg-red-400 shrink-0" />
-                <span className="text-xs text-gray-700">Full day</span>
-              </div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-green-500 shrink-0" /><span className="text-xs text-gray-700">Drop-offs</span></div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-blue-500 shrink-0" /><span className="text-xs text-gray-700">Pick-ups</span></div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-red-400 shrink-0" /><span className="text-xs text-gray-700">Full day</span></div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-orange-300 shrink-0" /><span className="text-xs text-gray-700">Manual entry</span></div>
             </div>
 
-            {/* Add available day */}
             {selectedDay && (
               <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Add Slots</p>
-                <button
-                  onClick={() => { setAddDaySlots(10); setAddDayModal({ date: selectedDay, dayType: "dropoff" }); }}
-                  className="min-h-8 rounded-lg border border-green-600 px-3 text-xs font-semibold text-green-700 text-left"
-                >
-                  + Drop-off Day
-                </button>
-                <button
-                  onClick={() => { setAddDaySlots(10); setAddDayModal({ date: selectedDay, dayType: "pickup" }); }}
-                  className="min-h-8 rounded-lg border border-blue-600 px-3 text-xs font-semibold text-blue-700 text-left"
-                >
-                  + Pick-up Day
-                </button>
+                <button onClick={() => { setAddDaySlots(10); setAddDayModal({ date: selectedDay, dayType: "dropoff" }); }}
+                  className="min-h-8 rounded-lg border border-green-600 px-3 text-xs font-semibold text-green-700 text-left">+ Drop-off Day</button>
+                <button onClick={() => { setAddDaySlots(10); setAddDayModal({ date: selectedDay, dayType: "pickup" }); }}
+                  className="min-h-8 rounded-lg border border-blue-600 px-3 text-xs font-semibold text-blue-700 text-left">+ Pick-up Day</button>
               </div>
             )}
           </div>
 
-          {/* Main calendar area */}
+          {/* Main calendar */}
           <div className="flex flex-col flex-1 overflow-hidden">
-            {/* Month nav */}
             <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200">
-              <button
-                onClick={goToday}
-                className="min-h-9 rounded-lg border border-gray-300 px-3 text-sm font-semibold text-black hover:bg-gray-50"
-              >
-                Today
-              </button>
+              <button onClick={goToday} className="min-h-9 rounded-lg border border-gray-300 px-3 text-sm font-semibold text-black hover:bg-gray-50">Today</button>
               <div className="flex items-center gap-1">
                 <button onClick={prevMonth} className="p-2 rounded-full hover:bg-gray-100 text-gray-600">‹</button>
                 <button onClick={nextMonth} className="p-2 rounded-full hover:bg-gray-100 text-gray-600">›</button>
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900">{MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h2>
             </div>
 
             <div className="flex flex-1 overflow-hidden">
-              {/* Calendar grid */}
               <div className="flex-1 overflow-auto">
-                {/* Weekday headers */}
                 <div className="grid grid-cols-7 border-b border-gray-200 bg-white">
                   {WEEKDAYS_SHORT.map((d) => (
-                    <div key={d} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      {d}
-                    </div>
+                    <div key={d} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">{d}</div>
                   ))}
                 </div>
-
-                {/* Day cells */}
                 <div className="grid grid-cols-7 flex-1">
                   {grid.map((date, i) => {
-                    if (!date) {
-                      return <div key={i} className="min-h-28 border-r border-b border-gray-100 bg-gray-50" />;
-                    }
-
+                    if (!date) return <div key={i} className="min-h-28 border-r border-b border-gray-100 bg-gray-50" />;
                     const isToday = isSameDay(date, today);
                     const isSelected = selectedDay ? isSameDay(date, selectedDay) : false;
                     const dateStr = toDateStr(date);
@@ -416,29 +429,23 @@ export default function AdminWinterStoragePage() {
                     const { dropoffs, pickups } = signupsForDay(date);
                     const dropoffDay = dayEvents.find((d) => d.day_type === "dropoff");
                     const pickupDay = dayEvents.find((d) => d.day_type === "pickup");
+                    const manualDropoffs = dropoffs.filter((s) => s.is_manual_booking).length;
+                    const manualPickups = pickups.filter((s) => s.is_manual_booking).length;
 
                     return (
-                      <div
-                        key={i}
-                        onClick={() => setSelectedDay(isSelected ? null : date)}
-                        className={`min-h-28 border-r border-b border-gray-100 p-1.5 cursor-pointer transition-colors
-                          ${isSelected ? "bg-green-50 border-green-200" : "bg-white hover:bg-gray-50"}`}
-                      >
+                      <div key={i} onClick={() => setSelectedDay(isSelected ? null : date)}
+                        className={`min-h-28 border-r border-b border-gray-100 p-1.5 cursor-pointer transition-colors ${isSelected ? "bg-green-50 border-green-200" : "bg-white hover:bg-gray-50"}`}>
                         <div className="flex items-center justify-between mb-1">
-                          <span
-                            className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full
-                              ${isToday ? "bg-green-600 text-white" : "text-gray-700"}`}
-                          >
+                          <span className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${isToday ? "bg-green-600 text-white" : "text-gray-700"}`}>
                             {date.getDate()}
                           </span>
                         </div>
-
                         <div className="flex flex-col gap-0.5">
-                          {/* Drop-off events */}
                           {dropoffs.length > 0 && (
                             <div className={`text-xs px-1.5 py-0.5 rounded font-medium ${dropoffDay?.isFull ? "bg-red-100 text-red-700" : "bg-green-100 text-green-800"}`}>
                               {dropoffs.length} drop-off{dropoffs.length !== 1 ? "s" : ""}
                               {dropoffDay ? ` (${dropoffDay.bookedSlots}/${dropoffDay.max_slots})` : ""}
+                              {manualDropoffs > 0 ? ` · ${manualDropoffs}M` : ""}
                               {dropoffDay?.isFull ? " FULL" : ""}
                             </div>
                           )}
@@ -447,12 +454,11 @@ export default function AdminWinterStoragePage() {
                               Drop-offs open ({dropoffDay.max_slots} slots)
                             </div>
                           )}
-
-                          {/* Pick-up events */}
                           {pickups.length > 0 && (
                             <div className={`text-xs px-1.5 py-0.5 rounded font-medium ${pickupDay?.isFull ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-800"}`}>
                               {pickups.length} pick-up{pickups.length !== 1 ? "s" : ""}
                               {pickupDay ? ` (${pickupDay.bookedSlots}/${pickupDay.max_slots})` : ""}
+                              {manualPickups > 0 ? ` · ${manualPickups}M` : ""}
                               {pickupDay?.isFull ? " FULL" : ""}
                             </div>
                           )}
@@ -472,66 +478,46 @@ export default function AdminWinterStoragePage() {
               {selectedDay && (
                 <div className="w-80 shrink-0 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-gray-900 text-sm">
                       {selectedDay.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
                     </h3>
-                    <button onClick={() => setSelectedDay(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={openManualModal} className="min-h-7 rounded-lg bg-green-600 px-2 text-xs font-semibold text-white">+ Add</button>
+                      <button onClick={() => setSelectedDay(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+                    </div>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-                    {/* Calendar day controls */}
-                    {selectedCalDays.length > 0 ? (
+                    {selectedCalDays.length > 0 && (
                       <div className="flex flex-col gap-2">
                         {selectedCalDays.map((cd) => (
                           <div key={cd.id} className={`rounded-lg p-3 text-sm ${cd.day_type === "dropoff" ? "bg-green-50 border border-green-200" : "bg-blue-50 border border-blue-200"}`}>
                             <div className="flex items-center justify-between">
                               <span className="font-semibold capitalize text-gray-800">{cd.day_type.replace("_", "-")}</span>
                               <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => handleToggleFull(cd.id, cd.is_manually_full)}
-                                  className={`text-xs px-2 py-0.5 rounded-full font-semibold ${cd.is_manually_full ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"}`}
-                                >
+                                <button onClick={() => handleToggleFull(cd.id, cd.is_manually_full)}
+                                  className={`text-xs px-2 py-0.5 rounded-full font-semibold ${cd.is_manually_full ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"}`}>
                                   {cd.is_manually_full ? "Mark Open" : "Mark Full"}
                                 </button>
-                                <button
-                                  onClick={() => handleRemoveDay(cd.id)}
-                                  className="text-xs text-red-600 hover:text-red-800"
-                                  title="Remove this day"
-                                >
-                                  ✕
-                                </button>
+                                <button onClick={() => handleRemoveDay(cd.id)} className="text-xs text-red-600 hover:text-red-800" title="Remove">✕</button>
                               </div>
                             </div>
                             <p className="text-gray-600 text-xs mt-1">{cd.bookedSlots} of {cd.max_slots} slots booked{cd.isFull ? " · FULL" : ""}</p>
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 italic">No slots configured for this day.</p>
                     )}
 
-                    {/* Add slot buttons (mobile-friendly) */}
                     <div className="flex gap-2 lg:hidden">
-                      <button
-                        onClick={() => { setAddDaySlots(10); setAddDayModal({ date: selectedDay, dayType: "dropoff" }); }}
-                        className="flex-1 min-h-9 rounded-lg border border-green-600 text-xs font-semibold text-green-700"
-                      >
-                        + Drop-offs
-                      </button>
-                      <button
-                        onClick={() => { setAddDaySlots(10); setAddDayModal({ date: selectedDay, dayType: "pickup" }); }}
-                        className="flex-1 min-h-9 rounded-lg border border-blue-600 text-xs font-semibold text-blue-700"
-                      >
-                        + Pick-ups
-                      </button>
+                      <button onClick={() => { setAddDaySlots(10); setAddDayModal({ date: selectedDay, dayType: "dropoff" }); }}
+                        className="flex-1 min-h-9 rounded-lg border border-green-600 text-xs font-semibold text-green-700">+ Drop-offs</button>
+                      <button onClick={() => { setAddDaySlots(10); setAddDayModal({ date: selectedDay, dayType: "pickup" }); }}
+                        className="flex-1 min-h-9 rounded-lg border border-blue-600 text-xs font-semibold text-blue-700">+ Pick-ups</button>
                     </div>
 
-                    {/* Drop-offs for this day */}
                     {selectedDaySignups && selectedDaySignups.dropoffs.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-2">
-                          Drop-offs ({selectedDaySignups.dropoffs.length})
-                        </p>
+                        <p className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-2">Drop-offs ({selectedDaySignups.dropoffs.length})</p>
                         <div className="flex flex-col gap-2">
                           {selectedDaySignups.dropoffs.map((s) => (
                             <SignupCard key={s.id} signup={s} statuses={STATUSES} statusStyles={STATUS_STYLES} onStatusChange={handleStatusChange} />
@@ -540,12 +526,9 @@ export default function AdminWinterStoragePage() {
                       </div>
                     )}
 
-                    {/* Pick-ups for this day */}
                     {selectedDaySignups && selectedDaySignups.pickups.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-2">
-                          Pick-ups ({selectedDaySignups.pickups.length})
-                        </p>
+                        <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-2">Pick-ups ({selectedDaySignups.pickups.length})</p>
                         <div className="flex flex-col gap-2">
                           {selectedDaySignups.pickups.map((s) => (
                             <SignupCard key={s.id} signup={s} statuses={STATUSES} statusStyles={STATUS_STYLES} onStatusChange={handleStatusChange} />
@@ -554,11 +537,9 @@ export default function AdminWinterStoragePage() {
                       </div>
                     )}
 
-                    {selectedDaySignups &&
-                      selectedDaySignups.dropoffs.length === 0 &&
-                      selectedDaySignups.pickups.length === 0 && (
-                        <p className="text-sm text-gray-500 italic">No bookings for this day.</p>
-                      )}
+                    {selectedDaySignups && selectedDaySignups.dropoffs.length === 0 && selectedDaySignups.pickups.length === 0 && (
+                      <p className="text-sm text-gray-500 italic">No bookings for this day.</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -571,38 +552,117 @@ export default function AdminWinterStoragePage() {
       {addDayModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4 shadow-xl">
-            <h2 className="text-lg font-bold text-gray-900">
-              Add {addDayModal.dayType === "dropoff" ? "Drop-off" : "Pick-up"} Day
-            </h2>
-            <p className="text-sm text-gray-600">
-              {addDayModal.date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-            </p>
+            <h2 className="text-lg font-bold text-gray-900">Add {addDayModal.dayType === "dropoff" ? "Drop-off" : "Pick-up"} Day</h2>
+            <p className="text-sm text-gray-600">{addDayModal.date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
             <div>
               <label className="text-sm font-semibold text-gray-700 mb-1 block">Max slots (capacity)</label>
-              <input
-                type="number"
-                min={1}
-                value={addDaySlots}
-                onChange={(e) => setAddDaySlots(Number(e.target.value))}
-                className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black"
-              />
+              <input type="number" min={1} value={addDaySlots} onChange={(e) => setAddDaySlots(Number(e.target.value))} className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black" />
             </div>
-            {zoneFilter !== "all" && (
-              <p className="text-xs text-gray-500">Zone: {zones.find((z) => z.id === zoneFilter)?.name ?? "Selected zone"}</p>
-            )}
             <div className="flex gap-3">
-              <button
-                onClick={() => setAddDayModal(null)}
-                className="flex-1 min-h-10 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddDay}
-                disabled={isSavingDay || addDaySlots < 1}
-                className="flex-1 min-h-10 rounded-lg bg-green-600 text-white text-sm font-semibold disabled:opacity-70"
-              >
+              <button onClick={() => setAddDayModal(null)} className="flex-1 min-h-10 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700">Cancel</button>
+              <button onClick={handleAddDay} disabled={isSavingDay || addDaySlots < 1} className="flex-1 min-h-10 rounded-lg bg-green-600 text-white text-sm font-semibold disabled:opacity-70">
                 {isSavingDay ? "Saving..." : "Add Day"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Booking Modal */}
+      {showManualModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl my-4">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">Add Customer Manually</h2>
+              <button onClick={() => setShowManualModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            </div>
+
+            <div className="px-6 py-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
+              {/* Customer info */}
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer Info</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Name <span className="text-red-500">*</span></label>
+                  <input value={manualForm.name} onChange={(e) => setManualForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="John Smith" className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Phone</label>
+                  <input value={manualForm.phone} onChange={(e) => setManualForm((f) => ({ ...f, phone: e.target.value }))}
+                    placeholder="(262) 555-0100" className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Email</label>
+                  <input value={manualForm.email} onChange={(e) => setManualForm((f) => ({ ...f, email: e.target.value }))}
+                    placeholder="john@example.com" className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Address</label>
+                  <input value={manualForm.address} onChange={(e) => setManualForm((f) => ({ ...f, address: e.target.value }))}
+                    placeholder="123 Farm Rd, Oconomowoc, WI 53066" className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm" />
+                </div>
+              </div>
+
+              {/* Equipment info */}
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">Equipment</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Unit (Make / Model) <span className="text-red-500">*</span></label>
+                  <input value={manualForm.unit} onChange={(e) => setManualForm((f) => ({ ...f, unit: e.target.value }))}
+                    placeholder="John Deere X350" className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Serial Number</label>
+                  <input value={manualForm.serialNumber} onChange={(e) => setManualForm((f) => ({ ...f, serialNumber: e.target.value }))}
+                    placeholder="1GX350XXXXXX" className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Tag Number</label>
+                  <input value={manualForm.tagNumber} onChange={(e) => setManualForm((f) => ({ ...f, tagNumber: e.target.value }))}
+                    placeholder="PP-2026-001" className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm" />
+                </div>
+              </div>
+
+              {/* Dates */}
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">Schedule</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Drop-off Date</label>
+                  <select value={manualForm.dropoffDayId} onChange={(e) => setManualForm((f) => ({ ...f, dropoffDayId: e.target.value }))}
+                    className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm bg-white">
+                    <option value="">— None —</option>
+                    {dropoffDayOptions.map((d) => (
+                      <option key={d.id} value={d.id}>{formatDateShort(d.date)} ({d.bookedSlots}/{d.max_slots})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Pick-up Date</label>
+                  <select value={manualForm.pickupDayId} onChange={(e) => setManualForm((f) => ({ ...f, pickupDayId: e.target.value }))}
+                    className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm bg-white">
+                    <option value="">— None —</option>
+                    {pickupDayOptions.map((d) => (
+                      <option key={d.id} value={d.id}>{formatDateShort(d.date)} ({d.bookedSlots}/{d.max_slots})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Status</label>
+                  <select value={manualForm.status} onChange={(e) => setManualForm((f) => ({ ...f, status: e.target.value as WinterStorageStatus }))}
+                    className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm bg-white">
+                    {STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {manualError && <p className="text-sm text-red-600">{manualError}</p>}
+            </div>
+
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
+              <button onClick={() => setShowManualModal(false)} className="flex-1 min-h-11 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700">Cancel</button>
+              <button onClick={handleAddManualBooking} disabled={isSavingManual}
+                className="flex-1 min-h-11 rounded-lg bg-green-600 text-white text-sm font-semibold disabled:opacity-70">
+                {isSavingManual ? "Saving..." : "Add Booking"}
               </button>
             </div>
           </div>
@@ -612,12 +672,7 @@ export default function AdminWinterStoragePage() {
   );
 }
 
-function SignupCard({
-  signup,
-  statuses,
-  statusStyles,
-  onStatusChange,
-}: {
+function SignupCard({ signup, statuses, statusStyles, onStatusChange }: {
   signup: EnrichedSignup;
   statuses: WinterStorageStatus[];
   statusStyles: Record<WinterStorageStatus, string>;
@@ -626,9 +681,20 @@ function SignupCard({
   return (
     <div className="rounded-lg border border-gray-200 p-3 flex flex-col gap-2 bg-white">
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-sm font-semibold text-gray-900">{signup.accountName}</p>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-sm font-semibold text-gray-900 truncate">{signup.accountName}</p>
+            {signup.is_manual_booking && <span className="text-[9px] bg-orange-100 text-orange-700 font-bold px-1 py-0.5 rounded shrink-0">MANUAL</span>}
+          </div>
           <p className="text-xs text-gray-500">{signup.equipmentLabel}</p>
+          {signup.is_manual_booking && (
+            <div className="text-[10px] text-gray-500 mt-0.5 space-y-0.5">
+              {signup.manual_serial_number && <p>S/N: {signup.manual_serial_number}</p>}
+              {signup.manual_tag_number && <p>Tag: {signup.manual_tag_number}</p>}
+              {signup.manual_customer_phone && <p>{signup.manual_customer_phone}</p>}
+              {signup.manual_customer_address && <p className="truncate">{signup.manual_customer_address}</p>}
+            </div>
+          )}
         </div>
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${statusStyles[signup.status]}`}>
           {signup.status.replace(/_/g, " ")}
@@ -636,13 +702,8 @@ function SignupCard({
       </div>
       <div className="flex flex-wrap gap-1">
         {statuses.map((st) => (
-          <button
-            key={st}
-            onClick={() => onStatusChange(signup.id, st)}
-            className={`min-h-6 rounded-full px-2 text-[10px] font-semibold capitalize ${
-              signup.status === st ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
+          <button key={st} onClick={() => onStatusChange(signup.id, st)}
+            className={`min-h-6 rounded-full px-2 text-[10px] font-semibold capitalize ${signup.status === st ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
             {st.replace(/_/g, " ")}
           </button>
         ))}

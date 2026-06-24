@@ -798,8 +798,8 @@ export interface Database {
       winter_storage_signups: {
         Row: {
           id: string;
-          business_account_id: string;
-          equipment_id: string;
+          business_account_id: string | null;
+          equipment_id: string | null;
           zone_id: string | null;
           season_window_id: string | null;
           requested_dropoff_date: string | null;
@@ -811,13 +811,21 @@ export interface Database {
           status: WinterStorageStatus;
           dropoff_condition_notes: string | null;
           requested_by_profile_id: string | null;
+          is_manual_booking: boolean;
+          manual_customer_name: string | null;
+          manual_customer_phone: string | null;
+          manual_customer_email: string | null;
+          manual_customer_address: string | null;
+          manual_unit: string | null;
+          manual_serial_number: string | null;
+          manual_tag_number: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          business_account_id: string;
-          equipment_id: string;
+          business_account_id?: string;
+          equipment_id?: string;
           zone_id?: string | null;
           season_window_id?: string | null;
           requested_dropoff_date?: string | null;
@@ -829,6 +837,14 @@ export interface Database {
           status?: WinterStorageStatus;
           dropoff_condition_notes?: string | null;
           requested_by_profile_id?: string | null;
+          is_manual_booking?: boolean;
+          manual_customer_name?: string | null;
+          manual_customer_phone?: string | null;
+          manual_customer_email?: string | null;
+          manual_customer_address?: string | null;
+          manual_unit?: string | null;
+          manual_serial_number?: string | null;
+          manual_tag_number?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["winter_storage_signups"]["Insert"]>;
         Relationships: [];
