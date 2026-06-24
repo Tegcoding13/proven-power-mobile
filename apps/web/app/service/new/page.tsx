@@ -13,6 +13,19 @@ const REQUEST_TYPES: { value: ServiceRequestType; label: string }[] = [
   { value: "pickup_delivery", label: "Pickup & Delivery" },
 ];
 
+const COMMON_SERVICES = [
+  "Oil & Filter Change",
+  "Annual Tune-Up",
+  "Blade Sharpening / Replacement",
+  "Belt Replacement",
+  "Battery Replacement",
+  "Air Filter Service",
+  "Tire Repair / Flat",
+  "Engine Won't Start",
+  "Hydraulic Issue",
+  "Fuel System Issue",
+];
+
 export default function NewServiceRequestPage() {
   const router = useRouter();
   const { businessAccount, isLoading: isLoadingAccount } = useBusinessAccount();
@@ -20,6 +33,7 @@ export default function NewServiceRequestPage() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
   const [equipmentId, setEquipmentId] = useState<string>("");
   const [requestType, setRequestType] = useState<ServiceRequestType>("drop_off");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -59,6 +73,11 @@ export default function NewServiceRequestPage() {
       return;
     }
 
+    const fullDescription = [
+      selectedServices.length > 0 ? `Services needed: ${selectedServices.join(", ")}` : null,
+      description.trim() || null,
+    ].filter(Boolean).join("\n\n");
+
     const { data: created, error } = await supabase
       .from("service_requests")
       .insert({
@@ -66,7 +85,7 @@ export default function NewServiceRequestPage() {
         equipment_id: equipmentId,
         requested_by_profile_id: userData.user.id,
         request_type: requestType,
-        description: description.trim(),
+        description: fullDescription,
       })
       .select("*")
       .single();
@@ -135,8 +154,36 @@ export default function NewServiceRequestPage() {
           </div>
         </div>
 
+        <div>
+          <p className="font-semibold text-black mb-2">Common Services</p>
+          <p className="text-sm text-gray-500 mb-3">Select all that apply — or just describe below</p>
+          <div className="flex flex-wrap gap-2">
+            {COMMON_SERVICES.map((service) => {
+              const isSelected = selectedServices.includes(service);
+              return (
+                <button
+                  type="button"
+                  key={service}
+                  onClick={() =>
+                    setSelectedServices((prev) =>
+                      isSelected ? prev.filter((s) => s !== service) : [...prev, service]
+                    )
+                  }
+                  className={`min-h-10 rounded-full px-4 text-sm font-semibold border transition-colors ${
+                    isSelected
+                      ? "bg-green-600 text-white border-green-600"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-green-400"
+                  }`}
+                >
+                  {isSelected ? "✓ " : ""}{service}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <textarea
-          placeholder="Describe the issue"
+          placeholder="Additional details (optional if you selected a service above)"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
@@ -158,7 +205,7 @@ export default function NewServiceRequestPage() {
 
         <button
           type="submit"
-          disabled={!description.trim() || !equipmentId || isSubmitting || isLoadingAccount}
+          disabled={(!description.trim() && selectedServices.length === 0) || !equipmentId || isSubmitting || isLoadingAccount}
           className="min-h-12 rounded-lg bg-green-600 text-white font-semibold disabled:opacity-70"
         >
           {isSubmitting ? "Submitting..." : isLoadingAccount ? "Loading your account..." : "Submit Request"}

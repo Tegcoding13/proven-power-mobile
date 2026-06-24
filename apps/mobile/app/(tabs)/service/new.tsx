@@ -14,6 +14,19 @@ const REQUEST_TYPES: { value: ServiceRequestType; label: string }[] = [
   { value: "pickup_delivery", label: "Pickup & Delivery" },
 ];
 
+const COMMON_SERVICES = [
+  "Oil & Filter Change",
+  "Annual Tune-Up",
+  "Blade Sharpening / Replacement",
+  "Belt Replacement",
+  "Battery Replacement",
+  "Air Filter Service",
+  "Tire Repair / Flat",
+  "Engine Won't Start",
+  "Hydraulic Issue",
+  "Fuel System Issue",
+];
+
 export default function NewServiceRequestScreen() {
   const router = useRouter();
   const { session } = useAuth();
@@ -22,6 +35,7 @@ export default function NewServiceRequestScreen() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
   const [equipmentId, setEquipmentId] = useState<string | null>(null);
   const [requestType, setRequestType] = useState<ServiceRequestType>("drop_off");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [mediaUris, setMediaUris] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -62,6 +76,11 @@ export default function NewServiceRequestScreen() {
     setErrorMessage(null);
     setIsSubmitting(true);
 
+    const fullDescription = [
+      selectedServices.length > 0 ? `Services needed: ${selectedServices.join(", ")}` : null,
+      description.trim() || null,
+    ].filter(Boolean).join("\n\n");
+
     const { data: created, error } = await supabase
       .from("service_requests")
       .insert({
@@ -69,7 +88,7 @@ export default function NewServiceRequestScreen() {
         equipment_id: equipmentId,
         requested_by_profile_id: session.user.id,
         request_type: requestType,
-        description: description.trim(),
+        description: fullDescription,
       })
       .select("*")
       .single();
@@ -98,7 +117,7 @@ export default function NewServiceRequestScreen() {
     router.replace(`/service/${created.id}`);
   }
 
-  const canSubmit = description.trim().length > 0 && !!equipmentId && !isSubmitting && !isLoadingAccount;
+  const canSubmit = (description.trim().length > 0 || selectedServices.length > 0) && !!equipmentId && !isSubmitting && !isLoadingAccount;
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.white }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
@@ -146,8 +165,44 @@ export default function NewServiceRequestScreen() {
         ))}
       </View>
 
+      <Text style={{ fontSize: typeScale.base, fontWeight: "600", color: colors.black, marginTop: spacing.sm }}>
+        Common Services
+      </Text>
+      <Text style={{ fontSize: typeScale.sm, color: colors.gray[500], marginTop: -spacing.xs }}>
+        Select all that apply — or just describe below
+      </Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+        {COMMON_SERVICES.map((service) => {
+          const isSelected = selectedServices.includes(service);
+          return (
+            <Pressable
+              key={service}
+              onPress={() =>
+                setSelectedServices((prev) =>
+                  isSelected ? prev.filter((s) => s !== service) : [...prev, service]
+                )
+              }
+              style={{
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.xs,
+                minHeight: 36,
+                justifyContent: "center",
+                borderRadius: radii.pill,
+                borderWidth: 1,
+                borderColor: isSelected ? colors.green[500] : colors.gray[300],
+                backgroundColor: isSelected ? colors.green[500] : colors.white,
+              }}
+            >
+              <Text style={{ color: isSelected ? colors.white : colors.gray[700], fontWeight: "600", fontSize: typeScale.sm }}>
+                {isSelected ? "✓ " : ""}{service}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       <TextInput
-        placeholder="Describe the issue"
+        placeholder="Additional details (optional if you selected a service above)"
         placeholderTextColor={colors.gray[500]}
         value={description}
         onChangeText={setDescription}
