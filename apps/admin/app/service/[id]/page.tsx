@@ -52,10 +52,16 @@ async function fetchServiceRequestData(id: string) {
   ]);
 
   const changerIds = [...new Set((historyRows ?? []).map((h) => h.changed_by_profile_id).filter(Boolean))] as string[];
-  const { data: changerProfiles } = changerIds.length
-    ? await supabase.from("profiles").select("id, full_name").in("id", changerIds)
-    : { data: [] };
-  const profileNameById = new Map((changerProfiles ?? []).map((p) => [p.id, p.full_name]));
+  let profileNameById = new Map<string, string | null>();
+  if (changerIds.length) {
+    const res = await fetch(`${window.location.origin}/api/profile-names`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: changerIds }),
+    });
+    const nameMap: Record<string, string> = await res.json();
+    profileNameById = new Map(Object.entries(nameMap));
+  }
 
   const urls = await Promise.all(
     (mediaRows ?? []).map(async (m) => ({
