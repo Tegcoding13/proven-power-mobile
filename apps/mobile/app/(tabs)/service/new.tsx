@@ -168,10 +168,7 @@ export default function NewServiceRequestScreen() {
       <Text style={{ fontSize: typeScale.base, fontWeight: "600", color: colors.black, marginTop: spacing.sm }}>
         Common Services
       </Text>
-      <Text style={{ fontSize: typeScale.sm, color: colors.gray[500], marginTop: -spacing.xs }}>
-        Select all that apply — or just describe below
-      </Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs }}>
         {COMMON_SERVICES.map((service) => {
           const isSelected = selectedServices.includes(service);
           return (
@@ -183,17 +180,15 @@ export default function NewServiceRequestScreen() {
                 )
               }
               style={{
-                paddingHorizontal: spacing.md,
-                paddingVertical: spacing.xs,
-                minHeight: 36,
-                justifyContent: "center",
+                paddingHorizontal: spacing.sm,
+                paddingVertical: 6,
                 borderRadius: radii.pill,
                 borderWidth: 1,
                 borderColor: isSelected ? colors.green[500] : colors.gray[300],
                 backgroundColor: isSelected ? colors.green[500] : colors.white,
               }}
             >
-              <Text style={{ color: isSelected ? colors.white : colors.gray[700], fontWeight: "600", fontSize: typeScale.sm }}>
+              <Text style={{ color: isSelected ? colors.white : colors.gray[700], fontWeight: "500", fontSize: typeScale.sm }}>
                 {isSelected ? "✓ " : ""}{service}
               </Text>
             </Pressable>
@@ -202,7 +197,7 @@ export default function NewServiceRequestScreen() {
       </View>
 
       <TextInput
-        placeholder="Additional details (optional if you selected a service above)"
+        placeholder="Describe the issue"
         placeholderTextColor={colors.gray[500]}
         value={description}
         onChangeText={setDescription}

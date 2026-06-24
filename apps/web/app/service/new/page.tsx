@@ -156,7 +156,6 @@ export default function NewServiceRequestPage() {
 
         <div>
           <p className="font-semibold text-black mb-2">Common Services</p>
-          <p className="text-sm text-gray-500 mb-3">Select all that apply — or just describe below</p>
           <div className="flex flex-wrap gap-2">
             {COMMON_SERVICES.map((service) => {
               const isSelected = selectedServices.includes(service);
@@ -169,7 +168,7 @@ export default function NewServiceRequestPage() {
                       isSelected ? prev.filter((s) => s !== service) : [...prev, service]
                     )
                   }
-                  className={`min-h-10 rounded-full px-4 text-sm font-semibold border transition-colors ${
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium border transition-colors ${
                     isSelected
                       ? "bg-green-600 text-white border-green-600"
                       : "bg-white text-gray-700 border-gray-300 hover:border-green-400"
@@ -183,7 +182,7 @@ export default function NewServiceRequestPage() {
         </div>
 
         <textarea
-          placeholder="Additional details (optional if you selected a service above)"
+          placeholder="Describe the issue"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
