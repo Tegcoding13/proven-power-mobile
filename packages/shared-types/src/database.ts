@@ -107,6 +107,10 @@ export interface Database {
           tax_exempt_cert_url: string | null;
           tax_exempt_status: string | null;
           jd_financial_account_ref: string | null;
+          address: string | null;
+          city: string | null;
+          state: string | null;
+          zip: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -117,6 +121,10 @@ export interface Database {
           tax_exempt_cert_url?: string | null;
           tax_exempt_status?: string | null;
           jd_financial_account_ref?: string | null;
+          address?: string | null;
+          city?: string | null;
+          state?: string | null;
+          zip?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["business_accounts"]["Insert"]>;
         Relationships: [];
@@ -764,6 +772,29 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["inventory_listing_photos"]["Insert"]>;
         Relationships: [];
       };
+      storage_calendar_days: {
+        Row: {
+          id: string;
+          zone_id: string | null;
+          date: string;
+          day_type: "dropoff" | "pickup";
+          max_slots: number;
+          is_manually_full: boolean;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          zone_id?: string | null;
+          date: string;
+          day_type: "dropoff" | "pickup";
+          max_slots?: number;
+          is_manually_full?: boolean;
+          notes?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["storage_calendar_days"]["Insert"]>;
+        Relationships: [];
+      };
       winter_storage_signups: {
         Row: {
           id: string;
@@ -773,6 +804,8 @@ export interface Database {
           season_window_id: string | null;
           requested_dropoff_date: string | null;
           requested_pickup_date: string | null;
+          dropoff_calendar_day_id: string | null;
+          pickup_calendar_day_id: string | null;
           winterization_bundle_added: boolean;
           agreement_signed_at: string | null;
           status: WinterStorageStatus;
@@ -789,6 +822,8 @@ export interface Database {
           season_window_id?: string | null;
           requested_dropoff_date?: string | null;
           requested_pickup_date?: string | null;
+          dropoff_calendar_day_id?: string | null;
+          pickup_calendar_day_id?: string | null;
           winterization_bundle_added?: boolean;
           agreement_signed_at?: string | null;
           status?: WinterStorageStatus;
@@ -906,6 +941,7 @@ export type DealershipLocation = Database["public"]["Tables"]["dealership_locati
 export type StorageZone = Database["public"]["Tables"]["storage_zones"]["Row"];
 export type StorageZoneZipCode = Database["public"]["Tables"]["storage_zone_zip_codes"]["Row"];
 export type StorageSeasonWindow = Database["public"]["Tables"]["storage_season_windows"]["Row"];
+export type StorageCalendarDay = Database["public"]["Tables"]["storage_calendar_days"]["Row"];
 export type Equipment = Database["public"]["Tables"]["equipment"]["Row"];
 export type EquipmentPhoto = Database["public"]["Tables"]["equipment_photos"]["Row"];
 export type EquipmentDocument = Database["public"]["Tables"]["equipment_documents"]["Row"];
