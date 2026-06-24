@@ -45,7 +45,7 @@ async function fetchServiceRequestData(id: string) {
     supabase.from("business_accounts").select("*").eq("id", requestRow.business_account_id).single(),
     supabase
       .from("service_request_status_history")
-      .select("*")
+      .select("*, changed_by:profiles!changed_by_profile_id(full_name)")
       .eq("service_request_id", id)
       .order("created_at", { ascending: false }),
     supabase.from("service_request_media").select("*").eq("service_request_id", id),
@@ -63,7 +63,7 @@ async function fetchServiceRequestData(id: string) {
     request: requestRow,
     equipment: equipmentRow ?? null,
     account: accountRow ?? null,
-    history: historyRows ?? [],
+    history: (historyRows ?? []) as (ServiceRequestStatusHistory & { changed_by: { full_name: string | null } | null })[],
     mediaUrls: urls.filter((u): u is { id: string; url: string; mediaType: ServiceRequestMediaType } => Boolean(u.url)),
   };
 }
@@ -216,9 +216,10 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
         <h2 className="text-lg font-bold text-black mb-2">Status History</h2>
         <ul className="flex flex-col">
           {history.map((entry) => (
-            <li key={entry.id} className="flex items-center justify-between border-b border-gray-100 py-2">
+            <li key={entry.id} className="flex items-center justify-between border-b border-gray-100 py-2 gap-3">
               <StatusBadge status={entry.status} />
-              <span className="text-xs text-gray-700">{new Date(entry.created_at).toLocaleString()}</span>
+              <span className="text-xs text-gray-500 flex-1">{entry.changed_by?.full_name ?? "System"}</span>
+              <span className="text-xs text-gray-700 whitespace-nowrap">{new Date(entry.created_at).toLocaleString()}</span>
             </li>
           ))}
         </ul>
