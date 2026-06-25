@@ -77,7 +77,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/service",      label: "Service Queue",      description: "Incoming service requests",           icon: <IconWrench />,    countKey: "service"   },
   { href: "/parts",        label: "Parts Queue",         description: "Parts orders & stock checks",         icon: <IconBox />,       countKey: "parts"     },
   { href: "/messages",     label: "Message Inbox",       description: "Customer messages",                   icon: <IconMessage />,   countKey: "messages"  },
-  { href: "/winter-storage", label: "Winter Storage",   description: "Drop-off & pick-up calendar",         icon: <IconSnowflake />, countKey: null        },
+  { href: "/winter-storage", label: "Winter Storage",   description: "Drop-off & pick-up calendar",         icon: <IconSnowflake />, countKey: "storage"   },
   { href: "/inventory",    label: "Inventory",           description: "Equipment listings",                  icon: <IconTruck />,     countKey: null        },
   { href: "/promotions",   label: "Promotions",          description: "Customer promotions & announcements", icon: <IconMegaphone />, countKey: null        },
   { href: "/notifications", label: "Notification Rules", description: "Push & SMS automation",              icon: <IconBell />,      countKey: null        },
@@ -95,21 +95,24 @@ export default async function StaffHomePage() {
     { count: newServiceCount },
     { count: newPartsCount },
     { count: newMessageCount },
+    { count: newStorageCount },
   ] = await Promise.all([
     userId ? supabase.from("profiles").select("*").eq("id", userId).single() : Promise.resolve({ data: null }),
     userId ? supabase.from("staff_roles").select("department, dealership_location_id").eq("profile_id", userId).single() : Promise.resolve({ data: null }),
     supabase.from("service_requests").select("*", { count: "exact", head: true }).eq("status", "submitted"),
     supabase.from("parts_requests").select("*", { count: "exact", head: true }).eq("status", "submitted"),
     supabase.from("message_threads").select("*", { count: "exact", head: true }).eq("status", "open"),
+    supabase.from("winter_storage_signups").select("*", { count: "exact", head: true }).eq("status", "requested"),
   ]);
 
   const counts: Record<string, number> = {
     service: newServiceCount ?? 0,
     parts: newPartsCount ?? 0,
     messages: newMessageCount ?? 0,
+    storage: newStorageCount ?? 0,
   };
 
-  const totalPending = (newServiceCount ?? 0) + (newPartsCount ?? 0) + (newMessageCount ?? 0);
+  const totalPending = (newServiceCount ?? 0) + (newPartsCount ?? 0) + (newMessageCount ?? 0) + (newStorageCount ?? 0);
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
   const department = staffRole?.department ?? null;
 
