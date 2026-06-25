@@ -170,8 +170,8 @@ export default function AdminWinterStoragePage() {
   function signupsForDay(date: Date): { dropoffs: EnrichedSignup[]; pickups: EnrichedSignup[] } {
     const dateStr = toDateStr(date);
     return {
-      dropoffs: signups.filter((s) => s.requested_dropoff_date === dateStr),
-      pickups: signups.filter((s) => s.requested_pickup_date === dateStr),
+      dropoffs: signups.filter((s) => s.requested_dropoff_date === dateStr && s.status !== "cancelled"),
+      pickups: signups.filter((s) => s.requested_pickup_date === dateStr && s.status !== "cancelled"),
     };
   }
 
