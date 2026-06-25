@@ -2,44 +2,6 @@ import Link from "next/link";
 import { createClient } from "../lib/supabase/server";
 import { logOut } from "./(auth)/actions";
 
-function ProvenPowerLogo() {
-  const green = "#2f7a36";
-  return (
-    <svg viewBox="0 0 580 100" height="46" xmlns="http://www.w3.org/2000/svg" aria-label="Proven Power">
-
-      {/* ── Square mark (100 × 100) ── */}
-      <rect x="0" y="0" width="100" height="100" fill={green} />
-
-      {/* Left P stem — also serves as left border */}
-      <rect x="8"  y="8" width="13" height="84" fill="white" />
-      {/* Top border */}
-      <rect x="8"  y="8" width="84" height="9"  fill="white" />
-      {/* Bottom border — partial, stops ~65% across */}
-      <rect x="8"  y="83" width="58" height="9" fill="white" />
-
-      {/* Left P bowl — D-shape curving right from top of left stem */}
-      <path d="M21 17 h15 q21 0 21 21 q0 21-21 21 h-15 z" fill="white" />
-
-      {/* Right P stem — inset from right edge */}
-      <rect x="79" y="17" width="13" height="66" fill="white" />
-      {/* Right P bowl — reversed D-shape curving left from right stem */}
-      <path d="M79 17 h-15 q-21 0-21 21 q0 21 21 21 h15 z" fill="white" />
-
-      {/* ── "Proven Power" text ── */}
-      <text x="116" y="70"
-        fontFamily="'Arial Narrow', 'Helvetica Neue', Arial, sans-serif"
-        fontWeight="900"
-        fontSize="62"
-        fill="white"
-        letterSpacing="-0.5">
-        Proven Power
-      </text>
-
-      {/* Underline rule */}
-      <rect x="116" y="78" width="458" height="4" fill="white" />
-    </svg>
-  );
-}
 
 type NavItem = {
   href: string;
@@ -156,7 +118,8 @@ export default async function StaffHomePage() {
       {/* Header */}
       <header className="bg-[#1a3d2b] text-white px-6 py-0 flex items-center justify-between h-16 shadow-lg">
         <div className="flex items-center gap-4">
-          <ProvenPowerLogo />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Proven Power" height={38} className="h-[38px] w-auto" />
           <div className="h-5 w-px bg-white/20" />
           <span className="text-white/60 text-xs font-medium tracking-wide uppercase">Staff Portal</span>
         </div>
