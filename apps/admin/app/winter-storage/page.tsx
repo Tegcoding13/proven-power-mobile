@@ -306,6 +306,58 @@ export default function AdminWinterStoragePage() {
         </div>
       </div>
 
+      {/* ── New Requests Banner ── */}
+      {!isLoading && signups.filter((s) => s.status === "requested").length > 0 && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex flex-col gap-2">
+          <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">
+            {signups.filter((s) => s.status === "requested").length} New Request{signups.filter((s) => s.status === "requested").length !== 1 ? "s" : ""} — Needs Review
+          </p>
+          <div className="flex flex-col gap-2">
+            {signups.filter((s) => s.status === "requested").map((s) => (
+              <div key={s.id} className="bg-white rounded-xl border border-amber-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-gray-900 text-sm">{s.accountName}</p>
+                    {s.is_manual_booking && <span className="text-[10px] bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded">MANUAL</span>}
+                  </div>
+                  <p className="text-sm text-gray-600">{s.equipmentLabel}</p>
+                  <div className="flex gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                    {s.requested_dropoff_date && (
+                      <span>Drop-off: <span className="font-semibold text-gray-700">{formatDateShort(s.requested_dropoff_date)}</span></span>
+                    )}
+                    {s.requested_pickup_date && (
+                      <span>Pick-up: <span className="font-semibold text-gray-700">{formatDateShort(s.requested_pickup_date)}</span></span>
+                    )}
+                    {s.manual_customer_phone && <span>{s.manual_customer_phone}</span>}
+                    {s.manual_customer_email && <span>{s.manual_customer_email}</span>}
+                  </div>
+                  {s.is_manual_booking && (s.manual_serial_number || s.manual_tag_number) && (
+                    <div className="flex gap-3 mt-0.5 text-xs text-gray-400 flex-wrap">
+                      {s.manual_serial_number && <span>S/N: {s.manual_serial_number}</span>}
+                      {s.manual_tag_number && <span>Tag: {s.manual_tag_number}</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => handleStatusChange(s.id, "confirmed")}
+                    className="min-h-9 rounded-lg bg-green-600 px-4 text-sm font-semibold text-white"
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={() => handleStatusChange(s.id, "cancelled")}
+                    className="min-h-9 rounded-lg border border-red-300 px-4 text-sm font-semibold text-red-600"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <p className="p-8 text-gray-600">Loading...</p>
       ) : view === "list" ? (
