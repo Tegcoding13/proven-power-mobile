@@ -42,14 +42,16 @@ function DayCalendar({
   options,
   selectedDate,
   onSelect,
+  minDate,
 }: {
   label: string;
   dayType: "dropoff" | "pickup";
   options: DayOption[];
   selectedDate: string | null;
   onSelect: (date: string, dayId: string) => void;
+  minDate?: string | null;
 }) {
-  const firstAvailable = options.find((o) => !o.isFull);
+  const firstAvailable = options.find((o) => !o.isFull && (!minDate || o.date > minDate));
   const initDate = firstAvailable ? new Date(firstAvailable.date + "T12:00:00") : new Date();
   const [calYear, setCalYear] = useState(initDate.getFullYear());
   const [calMonth, setCalMonth] = useState(initDate.getMonth());
@@ -58,7 +60,6 @@ function DayCalendar({
   const grid = buildGrid(calYear, calMonth);
 
   const accent = dayType === "dropoff" ? colors.green[500] : "#2563eb";
-  const accentLight = dayType === "dropoff" ? colors.green[50] : "#eff6ff";
   const accentDark = dayType === "dropoff" ? colors.green[700] : "#1d4ed8";
 
   function prev() {
@@ -71,70 +72,71 @@ function DayCalendar({
   }
 
   return (
-    <View style={{ gap: spacing.sm }}>
-      <Text style={{ fontSize: typeScale.base, fontWeight: "600", color: colors.black }}>{label}</Text>
-      {selectedDate ? (
-        <Text style={{ fontSize: typeScale.sm, fontWeight: "600", color: accentDark }}>
-          Selected: {formatDate(selectedDate)}
-        </Text>
-      ) : null}
+    <View style={{ gap: 6 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <Text style={{ fontSize: typeScale.base, fontWeight: "700", color: colors.black }}>{label}</Text>
+        {selectedDate && (
+          <Text style={{ fontSize: typeScale.sm, fontWeight: "600", color: accentDark }}>
+            {formatDate(selectedDate)}
+          </Text>
+        )}
+      </View>
 
-      <View style={{ borderRadius: radii.md, borderWidth: 1, borderColor: colors.gray[300], overflow: "hidden", backgroundColor: colors.white }}>
+      <View style={{ borderRadius: 12, borderWidth: 1, borderColor: colors.gray[100], backgroundColor: colors.white }}>
         {/* Month nav */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: spacing.sm, backgroundColor: colors.gray[50], borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}>
-          <Pressable onPress={prev} style={{ padding: spacing.xs }}>
-            <Text style={{ fontSize: typeScale.lg, color: colors.gray[500] }}>‹</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}>
+          <Pressable onPress={prev} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={{ fontSize: 20, color: colors.gray[500], lineHeight: 24 }}>‹</Text>
           </Pressable>
-          <Text style={{ fontSize: typeScale.sm, fontWeight: "600", color: colors.gray[700] }}>
+          <Text style={{ fontSize: 13, fontWeight: "600", color: colors.gray[700] }}>
             {MONTH_NAMES[calMonth]} {calYear}
           </Text>
-          <Pressable onPress={next} style={{ padding: spacing.xs }}>
-            <Text style={{ fontSize: typeScale.lg, color: colors.gray[500] }}>›</Text>
+          <Pressable onPress={next} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={{ fontSize: 20, color: colors.gray[500], lineHeight: 24 }}>›</Text>
           </Pressable>
         </View>
 
         {/* Weekday headers */}
-        <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}>
+        <View style={{ flexDirection: "row", paddingHorizontal: 4, paddingTop: 6 }}>
           {DAY_INITIALS.map((d, i) => (
-            <View key={i} style={{ flex: 1, alignItems: "center", paddingVertical: spacing.xs }}>
-              <Text style={{ fontSize: 10, color: colors.gray[300], fontWeight: "600" }}>{d}</Text>
+            <View key={i} style={{ flex: 1, alignItems: "center" }}>
+              <Text style={{ fontSize: 11, color: colors.gray[300], fontWeight: "600" }}>{d}</Text>
             </View>
           ))}
         </View>
 
-        {/* Grid */}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", padding: spacing.xs }}>
+        {/* Grid — compact circles */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 4, paddingBottom: 8, paddingTop: 4 }}>
           {grid.map((date, i) => {
-            if (!date) {
-              return <View key={i} style={{ width: `${100 / 7}%`, aspectRatio: 1 }} />;
-            }
+            if (!date) return <View key={i} style={{ width: "14.28%", height: 34 }} />;
             const dateStr = toDateStr(date);
             const option = optionsByDate.get(dateStr);
             const isSelected = dateStr === selectedDate;
-            const isAvailable = !!option && !option.isFull;
-            const isFull = option?.isFull ?? false;
+            const isAvailable = !!option && !option.isFull && (!minDate || dateStr > minDate);
 
             return (
               <Pressable
                 key={i}
                 disabled={!isAvailable}
                 onPress={() => isAvailable && option && onSelect(dateStr, option.id)}
-                style={({ pressed }) => ({
-                  width: `${100 / 7}%`,
-                  aspectRatio: 1,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: radii.sm,
-                  backgroundColor: isSelected ? accent : isFull ? "#fef2f2" : isAvailable ? accentLight : "transparent",
-                  borderWidth: isAvailable && !isSelected ? 1 : 0,
-                  borderColor: accent,
-                  opacity: pressed && isAvailable ? 0.7 : 1,
-                })}
+                style={{ width: "14.28%", height: 34, alignItems: "center", justifyContent: "center" }}
               >
-                <Text style={{ fontSize: 12, fontWeight: "600", color: isSelected ? colors.white : isFull ? "#f87171" : isAvailable ? accentDark : colors.gray[300] }}>
-                  {date.getDate()}
-                </Text>
-                {isFull && <Text style={{ fontSize: 7, color: "#f87171", lineHeight: 9 }}>FULL</Text>}
+                <View style={{
+                  width: 30, height: 30, borderRadius: 15,
+                  backgroundColor: isSelected ? accent : "transparent",
+                  alignItems: "center", justifyContent: "center",
+                }}>
+                  <Text style={{
+                    fontSize: 13,
+                    fontWeight: isAvailable || isSelected ? "600" : "400",
+                    color: isSelected ? colors.white : isAvailable ? accentDark : colors.gray[100],
+                  }}>
+                    {date.getDate()}
+                  </Text>
+                  {isAvailable && !isSelected && (
+                    <View style={{ position: "absolute", bottom: 3, width: 4, height: 4, borderRadius: 2, backgroundColor: accent }} />
+                  )}
+                </View>
               </Pressable>
             );
           })}
@@ -408,19 +410,28 @@ export default function NewWinterStorageSignupScreen() {
         <>
           {dropoffOptions.length > 0 && (
             <DayCalendar
-              label="Choose Drop-off Date"
+              label="Drop-off Date"
               dayType="dropoff"
               options={dropoffOptions}
               selectedDate={selectedDropoffDate}
-              onSelect={(date, id) => { setSelectedDropoffDate(date); setSelectedDropoffDayId(id); }}
+              onSelect={(date, id) => {
+                setSelectedDropoffDate(date);
+                setSelectedDropoffDayId(id);
+                // Clear pick-up if it's no longer after the new drop-off
+                if (selectedPickupDate && selectedPickupDate <= date) {
+                  setSelectedPickupDate(null);
+                  setSelectedPickupDayId(null);
+                }
+              }}
             />
           )}
           {pickupOptions.length > 0 ? (
             <DayCalendar
-              label="Choose Pick-up Date"
+              label="Pick-up Date"
               dayType="pickup"
               options={pickupOptions}
               selectedDate={selectedPickupDate}
+              minDate={selectedDropoffDate}
               onSelect={(date, id) => { setSelectedPickupDate(date); setSelectedPickupDayId(id); }}
             />
           ) : (
