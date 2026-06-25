@@ -1,7 +1,33 @@
 import Link from "next/link";
-import Image from "next/image";
 import { createClient } from "../lib/supabase/server";
 import { logOut } from "./(auth)/actions";
+
+function ProvenPowerLogo() {
+  return (
+    <svg viewBox="0 0 340 80" height="38" xmlns="http://www.w3.org/2000/svg" aria-label="Proven Power Sheds">
+      {/* Square mark */}
+      <rect x="0" y="0" width="78" height="78" rx="3" fill="white" />
+      {/* Left stem */}
+      <rect x="10" y="10" width="11" height="58" fill="#1a3d2b" />
+      {/* Left P bowl */}
+      <path d="M21 10 h18 q18 0 18 19 q0 19-18 19 h-18 z" fill="#1a3d2b" />
+      {/* Right stem */}
+      <rect x="57" y="10" width="11" height="58" fill="#1a3d2b" />
+      {/* Right P bowl (mirrored) */}
+      <path d="M57 10 h-18 q-18 0-18 19 q0 19 18 19 h18 z" fill="#1a3d2b" />
+      {/* Notch cutout bottom-right of square */}
+      <rect x="44" y="48" width="34" height="30" fill="white" />
+
+      {/* PROVEN */}
+      <text x="92" y="36" fontFamily="'Arial Black', Arial, sans-serif" fontWeight="900" fontSize="30" fill="white" letterSpacing="1.5">PROVEN</text>
+      {/* POWER */}
+      <text x="92" y="68" fontFamily="'Arial Black', Arial, sans-serif" fontWeight="900" fontSize="30" fill="white" letterSpacing="1.5">POWER</text>
+      {/* SHEDS box */}
+      <rect x="232" y="50" width="104" height="26" rx="1" fill="white" />
+      <text x="284" y="68" fontFamily="'Arial Black', Arial, sans-serif" fontWeight="900" fontSize="15" fill="#1a3d2b" textAnchor="middle" letterSpacing="3">SHEDS</text>
+    </svg>
+  );
+}
 
 type NavItem = {
   href: string;
@@ -118,7 +144,7 @@ export default async function StaffHomePage() {
       {/* Header */}
       <header className="bg-[#1a3d2b] text-white px-6 py-0 flex items-center justify-between h-14 shadow-lg">
         <div className="flex items-center gap-4">
-          <Image src="/logo.png" alt="Proven Power" width={180} height={45} className="object-contain brightness-0 invert" />
+          <ProvenPowerLogo />
           <div className="h-5 w-px bg-white/20" />
           <span className="text-white/60 text-xs font-medium tracking-wide uppercase">Staff Portal</span>
         </div>
