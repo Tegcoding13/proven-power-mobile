@@ -117,14 +117,10 @@ export default async function StaffHomePage() {
     <div className="min-h-screen bg-[#f4f5f7] flex flex-col">
       {/* Header */}
       <header className="bg-[#1a3d2b] text-white px-6 py-0 flex items-center justify-between h-14 shadow-lg">
-        <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="Proven Power" width={32} height={32} className="rounded" />
-          <div className="h-6 w-px bg-white/20 mx-1" />
-          <div>
-            <span className="font-bold text-sm tracking-wide">Proven Power</span>
-            <span className="text-white/50 text-sm mx-2">·</span>
-            <span className="text-white/60 text-xs">Staff Portal</span>
-          </div>
+        <div className="flex items-center gap-4">
+          <Image src="/logo.png" alt="Proven Power" width={180} height={45} className="object-contain brightness-0 invert" />
+          <div className="h-5 w-px bg-white/20" />
+          <span className="text-white/60 text-xs font-medium tracking-wide uppercase">Staff Portal</span>
         </div>
         <div className="flex items-center gap-4">
           {profile?.full_name && (
