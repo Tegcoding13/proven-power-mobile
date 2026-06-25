@@ -206,6 +206,13 @@ export default function AdminWinterStoragePage() {
     await load();
   }
 
+  async function handleUpdateSlots(dayId: string, value: number) {
+    if (!value || value < 1) return;
+    const supabase = createClient();
+    await supabase.from("storage_calendar_days").update({ max_slots: value }).eq("id", dayId);
+    await load();
+  }
+
   async function handleAddManualBooking() {
     setManualError(null);
     if (!manualForm.name.trim()) { setManualError("Customer name is required."); return; }
@@ -502,7 +509,21 @@ export default function AdminWinterStoragePage() {
                                 <button onClick={() => handleRemoveDay(cd.id)} className="text-xs text-red-600 hover:text-red-800" title="Remove">✕</button>
                               </div>
                             </div>
-                            <p className="text-gray-600 text-xs mt-1">{cd.bookedSlots} of {cd.max_slots} slots booked{cd.isFull ? " · FULL" : ""}</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className="text-gray-600 text-xs">{cd.bookedSlots} of</span>
+                              <input
+                                type="number"
+                                min={1}
+                                defaultValue={cd.max_slots}
+                                key={cd.id + cd.max_slots}
+                                onBlur={(e) => {
+                                  const v = parseInt(e.target.value);
+                                  if (v !== cd.max_slots && v >= 1) handleUpdateSlots(cd.id, v);
+                                }}
+                                className="w-14 text-xs text-center rounded border border-gray-300 px-1 py-0.5 text-black font-semibold"
+                              />
+                              <span className="text-gray-600 text-xs">slots{cd.isFull ? " · FULL" : ""}</span>
+                            </div>
                           </div>
                         ))}
                       </div>
