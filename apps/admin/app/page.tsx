@@ -1,73 +1,88 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "../lib/supabase/server";
 import { logOut } from "./(auth)/actions";
 
-const NAV_ITEMS = [
-  {
-    href: "/service",
-    label: "Service Queue",
-    description: "View and manage incoming service requests",
-    icon: "🔧",
-    countKey: "service",
-    color: "border-green-500",
-  },
-  {
-    href: "/parts",
-    label: "Parts Queue",
-    description: "Fulfill parts orders and stock-check requests",
-    icon: "📦",
-    countKey: "parts",
-    color: "border-yellow-500",
-  },
-  {
-    href: "/messages",
-    label: "Message Inbox",
-    description: "Customer messages across all departments",
-    icon: "💬",
-    countKey: "messages",
-    color: "border-blue-500",
-  },
-  {
-    href: "/winter-storage",
-    label: "Winter Storage",
-    description: "Manage drop-off and pick-up calendar",
-    icon: "❄️",
-    countKey: null,
-    color: "border-sky-400",
-  },
-  {
-    href: "/inventory",
-    label: "Inventory",
-    description: "Browse and update equipment listings",
-    icon: "🚜",
-    countKey: null,
-    color: "border-green-400",
-  },
-  {
-    href: "/promotions",
-    label: "Promotions",
-    description: "Create and schedule customer promotions",
-    icon: "📣",
-    countKey: null,
-    color: "border-orange-400",
-  },
-  {
-    href: "/notifications",
-    label: "Notification Rules",
-    description: "Configure automated push and SMS triggers",
-    icon: "🔔",
-    countKey: null,
-    color: "border-purple-400",
-  },
-  {
-    href: "/staff",
-    label: "Staff Management",
-    description: "Invite staff and manage roles",
-    icon: "👥",
-    countKey: null,
-    color: "border-gray-400",
-  },
-] as const;
+type NavItem = {
+  href: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  countKey: string | null;
+};
+
+function IconWrench() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
+  );
+}
+function IconBox() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  );
+}
+function IconMessage() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+function IconSnowflake() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="2" x2="12" y2="22" /><line x1="2" y1="12" x2="22" y2="12" />
+      <polyline points="7 7 12 2 17 7" /><polyline points="7 17 12 22 17 17" />
+      <polyline points="2 7 7 12 2 17" /><polyline points="22 7 17 12 22 17" />
+    </svg>
+  );
+}
+function IconTruck() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+      <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+    </svg>
+  );
+}
+function IconMegaphone() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11l19-9-9 19-2-8-8-2z" />
+    </svg>
+  );
+}
+function IconBell() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+function IconUsers() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: "/service",      label: "Service Queue",      description: "Incoming service requests",           icon: <IconWrench />,    countKey: "service"   },
+  { href: "/parts",        label: "Parts Queue",         description: "Parts orders & stock checks",         icon: <IconBox />,       countKey: "parts"     },
+  { href: "/messages",     label: "Message Inbox",       description: "Customer messages",                   icon: <IconMessage />,   countKey: "messages"  },
+  { href: "/winter-storage", label: "Winter Storage",   description: "Drop-off & pick-up calendar",         icon: <IconSnowflake />, countKey: null        },
+  { href: "/inventory",    label: "Inventory",           description: "Equipment listings",                  icon: <IconTruck />,     countKey: null        },
+  { href: "/promotions",   label: "Promotions",          description: "Customer promotions & announcements", icon: <IconMegaphone />, countKey: null        },
+  { href: "/notifications", label: "Notification Rules", description: "Push & SMS automation",              icon: <IconBell />,      countKey: null        },
+  { href: "/staff",        label: "Staff Management",    description: "Invite staff & manage roles",         icon: <IconUsers />,     countKey: null        },
+];
 
 export default async function StaffHomePage() {
   const supabase = await createClient();
@@ -81,12 +96,8 @@ export default async function StaffHomePage() {
     { count: newPartsCount },
     { count: newMessageCount },
   ] = await Promise.all([
-    userId
-      ? supabase.from("profiles").select("*").eq("id", userId).single()
-      : Promise.resolve({ data: null }),
-    userId
-      ? supabase.from("staff_roles").select("department, dealership_location_id").eq("profile_id", userId).single()
-      : Promise.resolve({ data: null }),
+    userId ? supabase.from("profiles").select("*").eq("id", userId).single() : Promise.resolve({ data: null }),
+    userId ? supabase.from("staff_roles").select("department, dealership_location_id").eq("profile_id", userId).single() : Promise.resolve({ data: null }),
     supabase.from("service_requests").select("*", { count: "exact", head: true }).eq("status", "submitted"),
     supabase.from("parts_requests").select("*", { count: "exact", head: true }).eq("status", "submitted"),
     supabase.from("message_threads").select("*", { count: "exact", head: true }).eq("status", "open"),
@@ -99,92 +110,85 @@ export default async function StaffHomePage() {
   };
 
   const totalPending = (newServiceCount ?? 0) + (newPartsCount ?? 0) + (newMessageCount ?? 0);
-  const department = staffRole?.department ?? null;
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
+  const department = staffRole?.department ?? null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Top bar */}
-      <header className="bg-green-800 text-white px-6 py-4 flex items-center justify-between shadow-md">
+    <div className="min-h-screen bg-[#f4f5f7] flex flex-col">
+      {/* Header */}
+      <header className="bg-[#1a3d2b] text-white px-6 py-0 flex items-center justify-between h-14 shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
-            P
-          </div>
+          <Image src="/logo.png" alt="Proven Power" width={32} height={32} className="rounded" />
+          <div className="h-6 w-px bg-white/20 mx-1" />
           <div>
-            <p className="font-bold text-lg leading-tight tracking-tight">Proven Power</p>
-            <p className="text-green-300 text-xs leading-tight">Staff Portal</p>
+            <span className="font-bold text-sm tracking-wide">Proven Power</span>
+            <span className="text-white/50 text-sm mx-2">·</span>
+            <span className="text-white/60 text-xs">Staff Portal</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold">{profile?.full_name ?? "Staff"}</p>
-            <p className="text-xs text-green-300 capitalize">{department ?? "Staff"}</p>
-          </div>
+          {profile?.full_name && (
+            <div className="hidden sm:block text-right">
+              <p className="text-sm font-medium leading-tight">{profile.full_name}</p>
+              {department && <p className="text-xs text-white/50 capitalize leading-tight">{department}</p>}
+            </div>
+          )}
           <form action={logOut}>
-            <button
-              type="submit"
-              className="min-h-9 rounded-lg border border-white/30 px-4 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-            >
-              Sign Out
+            <button type="submit" className="h-8 rounded border border-white/25 px-3 text-xs font-medium text-white/80 hover:text-white hover:border-white/50 transition-colors">
+              Sign out
             </button>
           </form>
         </div>
       </header>
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
-        {/* Welcome row */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-5 py-7 flex flex-col gap-6">
+        {/* Welcome */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Good morning, {firstName}.</h1>
-            <p className="text-gray-500 mt-1 text-sm">
+            <h1 className="text-xl font-semibold text-gray-900">Good morning, {firstName}.</h1>
+            <p className="text-sm text-gray-400 mt-0.5">
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
             </p>
           </div>
           {totalPending > 0 && (
-            <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-center gap-3">
-              <span className="text-2xl font-bold text-red-600">{totalPending}</span>
-              <div>
-                <p className="text-sm font-semibold text-red-800">Item{totalPending !== 1 ? "s" : ""} need attention</p>
-                <p className="text-xs text-red-500">
-                  {[
-                    counts.service ? `${counts.service} service` : null,
-                    counts.parts ? `${counts.parts} parts` : null,
-                    counts.messages ? `${counts.messages} message${counts.messages !== 1 ? "s" : ""}` : null,
-                  ].filter(Boolean).join(" · ")}
-                </p>
-              </div>
+            <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+              <p className="text-sm text-red-700 font-medium">
+                {totalPending} item{totalPending !== 1 ? "s" : ""} need attention
+              </p>
             </div>
           )}
         </div>
 
-        {/* Nav grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Card grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {NAV_ITEMS.map((item) => {
             const badge = item.countKey ? counts[item.countKey] : 0;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative bg-white rounded-2xl border-l-4 ${item.color} shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col gap-2 group`}
+                className="relative bg-white rounded-xl border border-gray-200 hover:border-green-600 hover:shadow-sm transition-all p-4 flex flex-col gap-3 group"
               >
-                <div className="flex items-start justify-between">
-                  <span className="text-3xl">{item.icon}</span>
-                  {badge > 0 && (
-                    <span className="min-w-[26px] h-[26px] px-1.5 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center">
-                      {badge > 99 ? "99+" : badge}
-                    </span>
-                  )}
+                {badge > 0 && (
+                  <span className="absolute top-3 right-3 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
+                <span className="text-gray-400 group-hover:text-green-700 transition-colors">
+                  {item.icon}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 leading-tight">{item.label}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 leading-snug">{item.description}</p>
                 </div>
-                <p className="font-bold text-gray-900 group-hover:text-green-700 transition-colors">{item.label}</p>
-                <p className="text-sm text-gray-500">{item.description}</p>
               </Link>
             );
           })}
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-gray-400">
-          Proven Power · Oconomowoc &amp; Waukesha, WI · Internal use only
+        <p className="text-center text-xs text-gray-300 pt-2">
+          Proven Power · Oconomowoc &amp; Waukesha, WI
         </p>
       </main>
     </div>
