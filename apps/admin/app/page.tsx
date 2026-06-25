@@ -5,7 +5,7 @@ import { logOut } from "./(auth)/actions";
 function ProvenPowerLogo() {
   const green = "#2f7a36";
   return (
-    <svg viewBox="0 0 580 100" height="46" xmlns="http://www.w3.org/2000/svg" aria-label="Proven Power Sheds">
+    <svg viewBox="0 0 580 100" height="46" xmlns="http://www.w3.org/2000/svg" aria-label="Proven Power">
 
       {/* ── Square mark (100 × 100) ── */}
       <rect x="0" y="0" width="100" height="100" fill={green} />
@@ -35,20 +35,8 @@ function ProvenPowerLogo() {
         Proven Power
       </text>
 
-      {/* Underline rule (under "Proven Power", stops before SHEDS box) */}
-      <rect x="116" y="78" width="334" height="4" fill="white" />
-
-      {/* ── SHEDS box ── */}
-      <rect x="452" y="68" width="124" height="34" fill="white" />
-      <text x="514" y="91"
-        fontFamily="'Arial Narrow', Arial, sans-serif"
-        fontWeight="900"
-        fontSize="19"
-        fill={green}
-        textAnchor="middle"
-        letterSpacing="4">
-        SHEDS
-      </text>
+      {/* Underline rule */}
+      <rect x="116" y="78" width="458" height="4" fill="white" />
     </svg>
   );
 }
