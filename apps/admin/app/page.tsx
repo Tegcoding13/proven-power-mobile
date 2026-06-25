@@ -3,28 +3,52 @@ import { createClient } from "../lib/supabase/server";
 import { logOut } from "./(auth)/actions";
 
 function ProvenPowerLogo() {
+  const green = "#2f7a36";
   return (
-    <svg viewBox="0 0 340 80" height="38" xmlns="http://www.w3.org/2000/svg" aria-label="Proven Power Sheds">
-      {/* Square mark */}
-      <rect x="0" y="0" width="78" height="78" rx="3" fill="white" />
-      {/* Left stem */}
-      <rect x="10" y="10" width="11" height="58" fill="#1a3d2b" />
-      {/* Left P bowl */}
-      <path d="M21 10 h18 q18 0 18 19 q0 19-18 19 h-18 z" fill="#1a3d2b" />
-      {/* Right stem */}
-      <rect x="57" y="10" width="11" height="58" fill="#1a3d2b" />
-      {/* Right P bowl (mirrored) */}
-      <path d="M57 10 h-18 q-18 0-18 19 q0 19 18 19 h18 z" fill="#1a3d2b" />
-      {/* Notch cutout bottom-right of square */}
-      <rect x="44" y="48" width="34" height="30" fill="white" />
+    <svg viewBox="0 0 580 100" height="46" xmlns="http://www.w3.org/2000/svg" aria-label="Proven Power Sheds">
 
-      {/* PROVEN */}
-      <text x="92" y="36" fontFamily="'Arial Black', Arial, sans-serif" fontWeight="900" fontSize="30" fill="white" letterSpacing="1.5">PROVEN</text>
-      {/* POWER */}
-      <text x="92" y="68" fontFamily="'Arial Black', Arial, sans-serif" fontWeight="900" fontSize="30" fill="white" letterSpacing="1.5">POWER</text>
-      {/* SHEDS box */}
-      <rect x="232" y="50" width="104" height="26" rx="1" fill="white" />
-      <text x="284" y="68" fontFamily="'Arial Black', Arial, sans-serif" fontWeight="900" fontSize="15" fill="#1a3d2b" textAnchor="middle" letterSpacing="3">SHEDS</text>
+      {/* ── Square mark (100 × 100) ── */}
+      <rect x="0" y="0" width="100" height="100" fill={green} />
+
+      {/* Left P stem — also serves as left border */}
+      <rect x="8"  y="8" width="13" height="84" fill="white" />
+      {/* Top border */}
+      <rect x="8"  y="8" width="84" height="9"  fill="white" />
+      {/* Bottom border — partial, stops ~65% across */}
+      <rect x="8"  y="83" width="58" height="9" fill="white" />
+
+      {/* Left P bowl — D-shape curving right from top of left stem */}
+      <path d="M21 17 h15 q21 0 21 21 q0 21-21 21 h-15 z" fill="white" />
+
+      {/* Right P stem — inset from right edge */}
+      <rect x="79" y="17" width="13" height="66" fill="white" />
+      {/* Right P bowl — reversed D-shape curving left from right stem */}
+      <path d="M79 17 h-15 q-21 0-21 21 q0 21 21 21 h15 z" fill="white" />
+
+      {/* ── "Proven Power" text ── */}
+      <text x="116" y="70"
+        fontFamily="'Arial Narrow', 'Helvetica Neue', Arial, sans-serif"
+        fontWeight="900"
+        fontSize="62"
+        fill="white"
+        letterSpacing="-0.5">
+        Proven Power
+      </text>
+
+      {/* Underline rule (under "Proven Power", stops before SHEDS box) */}
+      <rect x="116" y="78" width="334" height="4" fill="white" />
+
+      {/* ── SHEDS box ── */}
+      <rect x="452" y="68" width="124" height="34" fill="white" />
+      <text x="514" y="91"
+        fontFamily="'Arial Narrow', Arial, sans-serif"
+        fontWeight="900"
+        fontSize="19"
+        fill={green}
+        textAnchor="middle"
+        letterSpacing="4">
+        SHEDS
+      </text>
     </svg>
   );
 }
@@ -142,7 +166,7 @@ export default async function StaffHomePage() {
   return (
     <div className="min-h-screen bg-[#f4f5f7] flex flex-col">
       {/* Header */}
-      <header className="bg-[#1a3d2b] text-white px-6 py-0 flex items-center justify-between h-14 shadow-lg">
+      <header className="bg-[#1a3d2b] text-white px-6 py-0 flex items-center justify-between h-16 shadow-lg">
         <div className="flex items-center gap-4">
           <ProvenPowerLogo />
           <div className="h-5 w-px bg-white/20" />
