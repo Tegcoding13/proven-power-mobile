@@ -219,7 +219,7 @@ export default function SettingsPage() {
           <p className="text-sm text-gray-500">Add these to your Vercel project settings to enable email and SMS:</p>
           <div className="flex flex-col gap-1 font-mono text-xs bg-gray-50 rounded-lg p-3 text-gray-700">
             <span>RESEND_API_KEY=re_xxxxxxxxxxxx</span>
-            <span>RESEND_FROM_EMAIL=notifications@provenpower.com</span>
+            <span>RESEND_FROM_EMAIL=onboarding@resend.dev  {/* change to verified domain later */}</span>
             <span>TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxx</span>
             <span>TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxx</span>
             <span>TWILIO_FROM_NUMBER=+1262xxxxxxx</span>
