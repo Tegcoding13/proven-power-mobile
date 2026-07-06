@@ -10,14 +10,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@proven-power/shared-types": "workspace:*",
+    "@proven-power/ui-tokens": "workspace:*",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "fast-xml-parser": "^5.9.3",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "@supabase/ssr": "^0.12.0",
-    "@supabase/supabase-js": "^2.108.2",
-    "@proven-power/shared-types": "workspace:*",
-    "@proven-power/ui-tokens": "workspace:*",
-    "fast-xml-parser": "^5.9.3"
+    "resend": "^6.17.1",
+    "twilio": "^6.0.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
