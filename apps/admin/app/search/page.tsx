@@ -1,23 +1,18 @@
 import Link from "next/link";
 import { searchCustomers, type CustomerResult } from "./actions";
 
-function highlight(text: string, query: string): string {
-  if (!query || !text) return text;
-  return text; // plain text — highlights would require client component
-}
-
-function StatPill({ count, label, href }: { count: number; label: string; href: string }) {
+function StatPill({ count, label }: { count: number; label: string }) {
   if (count === 0) return null;
   return (
-    <Link href={href} className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-200 px-2.5 py-0.5 text-xs font-semibold text-green-800 hover:bg-green-100">
+    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-200 px-2.5 py-0.5 text-xs font-semibold text-green-800">
       {count} {label}
-    </Link>
+    </span>
   );
 }
 
-function CustomerCard({ result, query }: { result: CustomerResult; query: string }) {
+function CustomerCard({ result }: { result: CustomerResult }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3">
+    <Link href={`/search/${result.profileId}`} className="block bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3 hover:border-green-500 hover:shadow-sm transition-all">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -28,10 +23,10 @@ function CustomerCard({ result, query }: { result: CustomerResult; query: string
           </div>
         </div>
         <div className="flex flex-wrap gap-1.5 justify-end">
-          <StatPill count={result.serviceCount} label="service" href={`/service?customer=${result.profileId}`} />
-          <StatPill count={result.partsCount} label="parts" href={`/parts?customer=${result.profileId}`} />
-          <StatPill count={result.messageCount} label="messages" href={`/messages?customer=${result.profileId}`} />
-          <StatPill count={result.storageCount} label="storage" href={`/winter-storage?customer=${result.profileId}`} />
+          <StatPill count={result.serviceCount} label="service" />
+          <StatPill count={result.partsCount} label="parts" />
+          <StatPill count={result.messageCount} label="messages" />
+          <StatPill count={result.storageCount} label="storage" />
         </div>
       </div>
 
@@ -43,9 +38,7 @@ function CustomerCard({ result, query }: { result: CustomerResult; query: string
             {result.equipment.map((eq) => (
               <div key={eq.id} className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-sm font-semibold text-gray-800">{eq.label}</span>
-                {eq.serial && (
-                  <span className="text-xs text-gray-400">S/N: {eq.serial}</span>
-                )}
+                {eq.serial && <span className="text-xs text-gray-400">S/N: {eq.serial}</span>}
               </div>
             ))}
           </div>
@@ -55,7 +48,7 @@ function CustomerCard({ result, query }: { result: CustomerResult; query: string
       {result.equipment.length === 0 && (
         <p className="text-xs text-gray-300 italic">No equipment on file</p>
       )}
-    </div>
+    </Link>
   );
 }
 
@@ -102,7 +95,7 @@ export default async function SearchPage({
                 {results.length} customer{results.length !== 1 ? "s" : ""} found for &ldquo;{query}&rdquo;
               </p>
               {results.map((r) => (
-                <CustomerCard key={r.profileId} result={r} query={query} />
+                <CustomerCard key={r.profileId} result={r} />
               ))}
             </div>
           ) : (
