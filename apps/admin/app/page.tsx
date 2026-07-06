@@ -72,6 +72,13 @@ function IconUsers() {
     </svg>
   );
 }
+function IconSearch() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
 function IconSettings() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -89,6 +96,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/inventory",    label: "Inventory",           description: "Equipment listings",                  icon: <IconTruck />,     countKey: null        },
   { href: "/promotions",   label: "Promotions",          description: "Customer promotions & announcements", icon: <IconMegaphone />, countKey: null        },
   { href: "/notifications", label: "Notification Rules", description: "Push & SMS automation",              icon: <IconBell />,      countKey: null        },
+  { href: "/search",        label: "Customer Search",     description: "Look up customers, equipment & requests", icon: <IconSearch />,  countKey: null        },
   { href: "/staff",        label: "Staff Management",    description: "Invite staff & manage roles",         icon: <IconUsers />,     countKey: null        },
   { href: "/settings",     label: "Settings",            description: "Notification emails & SMS per dept",  icon: <IconSettings />,  countKey: null        },
 ];
