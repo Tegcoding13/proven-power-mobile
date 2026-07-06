@@ -1,6 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
 
 export type EmailPayload = {
@@ -16,6 +15,7 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
   }
   if (payload.to.length === 0) return;
 
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const { error } = await resend.emails.send({
     from: `Proven Power <${FROM}>`,
     to: payload.to,
