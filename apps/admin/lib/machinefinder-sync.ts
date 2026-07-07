@@ -76,20 +76,48 @@ export interface MachineFinderSyncResult {
   fetched: number;
   upserted: number;
   errors: string[];
+  diagnostic?: string;
+}
+
+// Attempt to extract a machine array from any common MachineFinder XML root structure.
+function extractMachines(parsed: Record<string, unknown>): RawMachine[] {
+  // <machines><machine> — original expected format
+  const fromMachines = (parsed?.machines as Record<string, unknown>)?.machine;
+  if (fromMachines) return asArray<RawMachine>(fromMachines as RawMachine | RawMachine[]);
+
+  // <ListingFeed><Listing> — John Deere MachineFinder standard export
+  const fromFeed = (parsed?.ListingFeed as Record<string, unknown>)?.Listing;
+  if (fromFeed) return asArray<RawMachine>(fromFeed as RawMachine | RawMachine[]);
+
+  // <inventory><item>
+  const fromInventory = (parsed?.inventory as Record<string, unknown>)?.item;
+  if (fromInventory) return asArray<RawMachine>(fromInventory as RawMachine | RawMachine[]);
+
+  // <rss><channel><item> — RSS feed format
+  const rssItems = ((parsed?.rss as Record<string, unknown>)?.channel as Record<string, unknown>)?.item;
+  if (rssItems) return asArray<RawMachine>(rssItems as RawMachine | RawMachine[]);
+
+  return [];
 }
 
 export async function syncMachineFinderInventory(
   supabase: SupabaseClient<Database>
 ): Promise<MachineFinderSyncResult> {
-  const response = await fetch(FEED_URL, { headers: { Accept: "application/xml" }, cache: "no-store" });
+  const response = await fetch(FEED_URL, { headers: { Accept: "application/xml, text/xml, */*" }, cache: "no-store" });
   if (!response.ok) {
-    throw new Error(`MachineFinder feed request failed: ${response.status} ${response.statusText}`);
+    return { fetched: 0, upserted: 0, errors: [], diagnostic: `Feed HTTP ${response.status} ${response.statusText} — check that ${FEED_URL} is accessible` };
   }
+
+  const contentType = response.headers.get("content-type") ?? "";
   const xml = await response.text();
 
+  if (!xml.trim().startsWith("<") && !contentType.includes("xml")) {
+    return { fetched: 0, upserted: 0, errors: [], diagnostic: `Feed returned non-XML content (${contentType}): ${xml.slice(0, 300)}` };
+  }
+
   const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
-  const parsed = parser.parse(xml);
-  const machines = asArray<RawMachine>(parsed?.machines?.machine);
+  const parsed = parser.parse(xml) as Record<string, unknown>;
+  const machines = extractMachines(parsed);
 
   const { data: locations } = await supabase.from("dealership_locations").select("id, machinefinder_dealer_id");
   const locationByDealerId = new Map(
@@ -159,5 +187,9 @@ export async function syncMachineFinderInventory(
     }
   }
 
-  return { fetched: machines.length, upserted, errors };
+  const diagnostic = machines.length === 0
+    ? `Feed parsed OK but found 0 machines. Root keys: ${Object.keys(parsed).join(", ")}. First 300 chars: ${xml.slice(0, 300)}`
+    : undefined;
+
+  return { fetched: machines.length, upserted, errors, diagnostic };
 }

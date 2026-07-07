@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import type { Promotion } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
+import { syncWordPress } from "./actions";
 
 export default function PromotionsPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -13,6 +14,8 @@ export default function PromotionsPage() {
   const [endsAt, setEndsAt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [isSyncing, startSync] = useTransition();
 
   async function fetchPromotions(): Promise<{ rows: Promotion[]; error: string | null }> {
     const supabase = createClient();
@@ -82,10 +85,32 @@ export default function PromotionsPage() {
     load();
   }
 
+  function handleSyncWordPress() {
+    setSyncMessage(null);
+    startSync(async () => {
+      const result = await syncWordPress();
+      const parts = [`Fetched ${result.fetched} posts · Imported ${result.upserted}`];
+      if (result.errors.length > 0) parts.push(`Error: ${result.errors[0]}`);
+      if (result.diagnostic) parts.push(result.diagnostic);
+      setSyncMessage(parts.join(" — "));
+      load();
+    });
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
-      <h1 className="text-2xl font-bold text-green-700">Promotions</h1>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h1 className="text-2xl font-bold text-green-700">Promotions</h1>
+        <button
+          onClick={handleSyncWordPress}
+          disabled={isSyncing}
+          className="min-h-10 rounded-lg border border-green-600 px-4 text-sm font-semibold text-green-700 disabled:opacity-60"
+        >
+          {isSyncing ? "Syncing…" : "Sync from provenpower.com"}
+        </button>
+      </div>
 
+      {syncMessage && <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2">{syncMessage}</p>}
       {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
 
       <form onSubmit={handleCreate} className="flex flex-col gap-3 rounded-lg border border-gray-300 p-4">
@@ -129,12 +154,20 @@ export default function PromotionsPage() {
         <ul className="flex flex-col gap-3">
           {promotions.map((promo) => (
             <li key={promo.id} className="rounded-lg border border-gray-300 p-4 flex items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold text-black">{promo.title}</p>
-                {promo.body ? <p className="text-sm text-gray-700">{promo.body}</p> : null}
-                {promo.ends_at ? (
-                  <p className="text-xs text-gray-500 mt-1">Ends {new Date(promo.ends_at).toLocaleDateString()}</p>
-                ) : null}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-black">{promo.title}</p>
+                  {(promo as unknown as { external_source?: string }).external_source === "wordpress" && (
+                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 rounded px-1.5 py-0.5">WP</span>
+                  )}
+                </div>
+                {promo.body ? <p className="text-sm text-gray-700 truncate">{promo.body}</p> : null}
+                <div className="flex gap-3 mt-1">
+                  {promo.ends_at && <p className="text-xs text-gray-500">Ends {new Date(promo.ends_at).toLocaleDateString()}</p>}
+                  {(promo as unknown as { external_url?: string }).external_url && (
+                    <a href={(promo as unknown as { external_url: string }).external_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">View on site ↗</a>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button

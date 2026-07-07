@@ -45,11 +45,10 @@ export default function AdminInventoryListPage() {
     setSyncMessage(null);
     try {
       const result = await syncMachineFinder();
-      setSyncMessage(
-        result.errors.length > 0
-          ? `Synced ${result.upserted}/${result.fetched} listings. ${result.errors.length} error(s): ${result.errors[0]}`
-          : `Synced ${result.upserted} used listing(s) from MachineFinder.`
-      );
+      const parts = [`Fetched: ${result.fetched} · Synced: ${result.upserted}`];
+      if (result.errors.length > 0) parts.push(`Errors: ${result.errors[0]}`);
+      if (result.diagnostic) parts.push(`ℹ ${result.diagnostic}`);
+      setSyncMessage(parts.join(" — "));
       await loadListings();
     } catch (err) {
       setSyncMessage(err instanceof Error ? err.message : "Sync failed.");
