@@ -7,14 +7,15 @@ type StatCardProps = { label: string; value: number | string; sub?: string; colo
 
 function StatCard({ label, value, sub, color = "text-gray-900", href }: StatCardProps) {
   const inner = (
-    <div className={`bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-1 ${href ? "hover:border-green-400 hover:shadow-sm transition-shadow" : ""}`}>
+    <div className={`h-full bg-white rounded-xl border border-gray-200 p-5 flex flex-col ${href ? "hover:border-green-400 hover:shadow-sm transition-shadow" : ""}`}>
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className={`text-3xl font-bold ${color}`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400">{sub}</p>}
-      {href && <p className="text-xs text-green-600 mt-1">View details →</p>}
+      <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
+      <div className="flex-1" />
+      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+      {href && <p className="text-xs text-green-600 mt-2">View details →</p>}
     </div>
   );
-  return href ? <Link href={href}>{inner}</Link> : inner;
+  return href ? <Link href={href} className="block h-full">{inner}</Link> : inner;
 }
 
 function BarRow({ label, count, max, color, href }: { label: string; count: number; max: number; color: string; href?: string }) {
