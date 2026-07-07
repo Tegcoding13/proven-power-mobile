@@ -2,12 +2,12 @@ import { useCallback, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { colors, gradients, spacing, radii, typeScale, shadows } from "@proven-power/ui-tokens";
+import { colors, spacing, radii, typeScale, shadows } from "@proven-power/ui-tokens";
 import type { MaintenanceTask } from "@proven-power/shared-types";
 import { useAuth } from "../../lib/auth-context";
 import { useBusinessAccount } from "../../lib/business-account";
 import { supabase } from "../../lib/supabase";
+import { ProvenPowerLogo } from "../../components/ProvenPowerLogo";
 
 type Route =
   | "/garage"
@@ -31,11 +31,6 @@ const QUICK_ACTIONS: { href: Route; label: string; icon: string }[] = [
   { href: "/service", label: "History", icon: "📋" },
   { href: "/deals", label: "Deals", icon: "🏷️" },
 ];
-
-function initials(name?: string | null): string {
-  if (!name) return "?";
-  return name.split(" ").map((part) => part[0]).slice(0, 2).join("").toUpperCase();
-}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -102,66 +97,64 @@ export default function HomeScreen() {
     }, [load])
   );
 
+  const firstName = profile?.full_name?.split(" ")[0] ?? "there";
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.gray[50] }}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
-        <LinearGradient colors={gradients.hero} style={{ paddingBottom: spacing.md }}>
+        {/* Header — solid brand green, no gradient */}
+        <View style={{ backgroundColor: "#1a3d2b" }}>
           <SafeAreaView edges={["top"]}>
-            <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-                <View
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text style={{ color: colors.white, fontWeight: "700", fontSize: typeScale.sm }}>{initials(profile?.full_name)}</Text>
-                </View>
-                <Text style={{ color: colors.white, fontSize: typeScale.lg, fontWeight: "700" }}>
-                  Hi, {profile?.full_name?.split(" ")[0] ?? "there"} 👋
-                </Text>
-              </View>
+            {/* Top bar: logo + notification */}
+            <View style={{
+              paddingHorizontal: spacing.lg,
+              paddingTop: spacing.md,
+              paddingBottom: spacing.sm,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}>
+              <ProvenPowerLogo width={148} height={34} />
               <Pressable
                 onPress={() => router.push("/notifications")}
-                style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}
+                style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" }}
               >
-                <Text style={{ fontSize: typeScale.base }}>🔔</Text>
-                {unreadCount > 0 ? (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: -2,
-                      right: -2,
-                      minWidth: 16,
-                      height: 16,
-                      borderRadius: 8,
-                      backgroundColor: colors.status.danger,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      paddingHorizontal: 3,
-                    }}
-                  >
+                <Text style={{ fontSize: 20 }}>🔔</Text>
+                {unreadCount > 0 && (
+                  <View style={{
+                    position: "absolute", top: 0, right: 0,
+                    minWidth: 16, height: 16, borderRadius: 8,
+                    backgroundColor: colors.status.danger,
+                    alignItems: "center", justifyContent: "center", paddingHorizontal: 3,
+                  }}>
                     <Text style={{ color: colors.white, fontSize: 9, fontWeight: "700" }}>
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </Text>
                   </View>
-                ) : null}
+                )}
               </Pressable>
             </View>
 
-            <View style={{ flexDirection: "row", gap: spacing.sm, paddingHorizontal: spacing.lg, marginTop: spacing.sm }}>
-              <StatPill label="Equipment" value={equipmentCount != null ? String(equipmentCount) : "–"} />
-              <StatPill label="Active Service" value={activeServiceCount != null ? String(activeServiceCount) : "–"} />
-              <StatPill label="Rewards" value="Soon" muted />
+            {/* Greeting */}
+            <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
+              <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: typeScale.xs, fontWeight: "500", letterSpacing: 0.5, textTransform: "uppercase" }}>
+                Welcome back
+              </Text>
+              <Text style={{ color: colors.white, fontSize: typeScale.xl, fontWeight: "700", marginTop: 2 }}>
+                {firstName}
+              </Text>
+            </View>
+
+            {/* Stat cards — white cards that bleed below the header */}
+            <View style={{ flexDirection: "row", gap: spacing.sm, paddingHorizontal: spacing.lg, marginBottom: -spacing.lg }}>
+              <StatCard label="Equipment" value={equipmentCount != null ? String(equipmentCount) : "–"} />
+              <StatCard label="Active Service" value={activeServiceCount != null ? String(activeServiceCount) : "–"} />
+              <StatCard label="Rewards" value="Soon" muted />
             </View>
           </SafeAreaView>
-        </LinearGradient>
+        </View>
 
-        <View style={{ flex: 1, padding: spacing.md, gap: spacing.md }}>
+        <View style={{ flex: 1, padding: spacing.md, paddingTop: spacing.lg + spacing.md, gap: spacing.md }}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
             {QUICK_ACTIONS.map((action) => (
               <Pressable
@@ -242,11 +235,19 @@ export default function HomeScreen() {
   );
 }
 
-function StatPill({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+function StatCard({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
-    <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radii.sm, paddingVertical: 6, alignItems: "center" }}>
-      <Text style={{ color: muted ? "rgba(255,255,255,0.6)" : colors.white, fontSize: typeScale.base, fontWeight: "700" }}>{value}</Text>
-      <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 10 }}>{label}</Text>
+    <View style={{
+      flex: 1,
+      backgroundColor: colors.white,
+      borderRadius: radii.md,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.xs,
+      alignItems: "center",
+      ...shadows.card,
+    }}>
+      <Text style={{ color: muted ? colors.gray[300] : colors.green[500], fontSize: typeScale.lg, fontWeight: "700" }}>{value}</Text>
+      <Text style={{ color: colors.gray[500], fontSize: 10, marginTop: 2, textAlign: "center" }}>{label}</Text>
     </View>
   );
 }
