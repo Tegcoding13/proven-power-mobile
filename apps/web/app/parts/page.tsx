@@ -6,6 +6,21 @@ import type { PartsRequest } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
 import { useBusinessAccount } from "../../lib/business-account";
 import { StatusBadge } from "../../components/StatusBadge";
+import { PageHeader } from "../../components/PageHeader";
+
+const TYPE_LABELS: Record<string, string> = {
+  stock_check: "Stock Check",
+  part_order: "Part Order",
+  broken_part_id: "Part Identification",
+};
+
+function relativeDate(iso: string) {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 export default function PartsListPage() {
   const { businessAccount, isLoading: isLoadingAccount } = useBusinessAccount();
@@ -16,62 +31,99 @@ export default function PartsListPage() {
   useEffect(() => {
     if (!businessAccount) return;
     const supabase = createClient();
-    supabase
-      .from("parts_requests")
-      .select("*")
+    supabase.from("parts_requests").select("*")
       .eq("business_account_id", businessAccount.id)
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setRequests(data ?? []);
-        setIsLoading(false);
-      });
+      .then(({ data }) => { setRequests(data ?? []); setIsLoading(false); });
   }, [businessAccount]);
 
-  const filteredRequests = useMemo(() => {
+  const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return requests;
-    return requests.filter((item) => [item.description, item.status].some((field) => field?.toLowerCase().includes(q)));
+    return requests.filter((r) => [r.description, r.status, r.request_type].some((f) => f?.toLowerCase().includes(q)));
   }, [requests, query]);
 
+  const open = filtered.filter((r) => !["fulfilled", "cancelled"].includes(r.status ?? ""));
+  const closed = filtered.filter((r) => ["fulfilled", "cancelled"].includes(r.status ?? ""));
+
   return (
-    <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
-      <Link href="/" className="text-sm text-green-700">
-        ← Back home
-      </Link>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-green-700">Parts</h1>
-        <Link href="/parts/new" className="min-h-12 flex items-center rounded-lg bg-green-600 px-4 font-semibold text-white">
-          + Request Parts
-        </Link>
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <PageHeader title="Parts Store" action={{ href: "/parts/new", label: "+ Request Parts" }} />
+
+      <div className="max-w-2xl mx-auto w-full px-4 py-6 flex flex-col gap-6">
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input
+            placeholder="Search by description or status…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full h-11 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a3d2b]/30 shadow-sm"
+          />
+        </div>
+
+        {isLoadingAccount || isLoading ? (
+          <div className="flex flex-col gap-3">
+            {[1,2].map((i) => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse shadow-sm" />)}
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-4 text-3xl">🛒</div>
+            <p className="font-semibold text-gray-900">No parts requests yet</p>
+            <p className="text-sm text-gray-500 mt-1">Need a part? Submit a request and our team will get back to you.</p>
+            <Link href="/parts/new" className="mt-4 bg-[#1a3d2b] text-white rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-[#0f2419] transition-colors">
+              Request Parts
+            </Link>
+          </div>
+        ) : (
+          <>
+            {open.length > 0 && (
+              <section>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Active · {open.length}</p>
+                <div className="flex flex-col gap-3">
+                  {open.map((r) => (
+                    <Link key={r.id} href={`/parts/${r.id}`} className="group bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-transparent hover:border-[#1a3d2b]/10 overflow-hidden flex">
+                      <div className="w-1 shrink-0 bg-[#1a3d2b]" />
+                      <div className="flex-1 p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{TYPE_LABELS[r.request_type ?? ""] ?? r.request_type}</span>
+                            <p className="text-sm text-gray-700 mt-1 line-clamp-2 leading-relaxed">{r.description}</p>
+                          </div>
+                          <StatusBadge status={r.status ?? "submitted"} />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-3">{relativeDate(r.created_at)}</p>
+                      </div>
+                      <div className="flex items-center pr-3 text-gray-300 group-hover:text-[#1a3d2b] transition-colors">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+            {closed.length > 0 && (
+              <section>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">History · {closed.length}</p>
+                <div className="flex flex-col gap-3 opacity-70">
+                  {closed.map((r) => (
+                    <Link key={r.id} href={`/parts/${r.id}`} className="group bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs text-gray-400">{TYPE_LABELS[r.request_type ?? ""] ?? r.request_type}</span>
+                        <p className="text-sm text-gray-600 line-clamp-1 mt-0.5">{r.description}</p>
+                      </div>
+                      <StatusBadge status={r.status ?? "fulfilled"} />
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
       </div>
 
-      {requests.length > 0 ? (
-        <input
-          placeholder="Search by description or status"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="min-h-12 rounded-lg border border-gray-300 bg-gray-50 px-4 text-base text-black"
-        />
-      ) : null}
-
-      {isLoadingAccount || isLoading ? (
-        <p className="text-gray-700">Loading...</p>
-      ) : requests.length === 0 ? (
-        <p className="text-gray-700">No parts requests yet.</p>
-      ) : filteredRequests.length === 0 ? (
-        <p className="text-gray-700">No parts requests match &quot;{query}&quot;.</p>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {filteredRequests.map((item) => (
-            <li key={item.id}>
-              <Link href={`/parts/${item.id}`} className="flex flex-col gap-1 rounded-lg border border-gray-300 p-4 hover:bg-gray-50">
-                <p className="text-sm text-gray-700 line-clamp-2">{item.description}</p>
-                <StatusBadge status={item.status} />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      <Link href="/parts/new" className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#1a3d2b] text-white flex items-center justify-center text-2xl font-bold shadow-xl hover:bg-[#0f2419] transition-colors z-10">+</Link>
     </div>
   );
 }
