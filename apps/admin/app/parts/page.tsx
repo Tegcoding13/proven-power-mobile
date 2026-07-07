@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { PartsRequest, BusinessAccount, DealershipLocation } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
 import { useStaffRole } from "../../lib/staff-role";
@@ -10,6 +11,7 @@ import { StatusBadge } from "../../components/StatusBadge";
 type EnrichedRequest = PartsRequest & { accountName: string };
 
 export default function PartsQueuePage() {
+  const router = useRouter();
   const { staffRole, isLoading: isLoadingStaffRole } = useStaffRole();
   const [requests, setRequests] = useState<EnrichedRequest[]>([]);
   const [locations, setLocations] = useState<DealershipLocation[]>([]);
@@ -83,12 +85,12 @@ export default function PartsQueuePage() {
           </thead>
           <tbody>
             {visibleRequests.map((r) => (
-              <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3">
-                  <Link href={`/parts/${r.id}`} className="text-green-700 font-semibold">
-                    {r.accountName}
-                  </Link>
-                </td>
+              <tr
+                key={r.id}
+                onClick={() => router.push(`/parts/${r.id}`)}
+                className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+              >
+                <td className="py-3 text-green-700 font-semibold">{r.accountName}</td>
                 <td className="py-3 text-black capitalize">{r.request_type.replace("_", " ")}</td>
                 <td className="py-3 text-black max-w-xs truncate">{r.description}</td>
                 <td className="py-3 text-black">
