@@ -124,19 +124,15 @@ export default async function HomePage() {
           </div>
 
           {/* Stat cards — white, bleed below header */}
-          <div className="grid grid-cols-3 gap-2 mb-[-20px]">
-            <div className="bg-white rounded-xl p-3 text-center shadow-md">
+          <div className="grid grid-cols-2 gap-2 mb-[-20px]">
+            <Link href="/garage" className="bg-white rounded-xl p-3 text-center shadow-md hover:shadow-lg transition-shadow">
               <p className="text-[#1a3d2b] text-xl font-bold">{equipmentCount}</p>
               <p className="text-gray-500 text-xs mt-0.5">Equipment</p>
-            </div>
-            <div className="bg-white rounded-xl p-3 text-center shadow-md">
+            </Link>
+            <Link href="/service" className="bg-white rounded-xl p-3 text-center shadow-md hover:shadow-lg transition-shadow">
               <p className="text-[#1a3d2b] text-xl font-bold">{activeServiceCount}</p>
               <p className="text-gray-500 text-xs mt-0.5">Active Service</p>
-            </div>
-            <div className="bg-white rounded-xl p-3 text-center shadow-md">
-              <p className="text-gray-300 text-xl font-bold">Soon</p>
-              <p className="text-gray-500 text-xs mt-0.5">Rewards</p>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
