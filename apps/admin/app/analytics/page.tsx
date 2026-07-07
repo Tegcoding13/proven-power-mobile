@@ -3,22 +3,24 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createServiceRoleClient } from "../../lib/supabase/service-role";
 
-type StatCardProps = { label: string; value: number | string; sub?: string; color?: string };
+type StatCardProps = { label: string; value: number | string; sub?: string; color?: string; href?: string };
 
-function StatCard({ label, value, sub, color = "text-gray-900" }: StatCardProps) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-1">
+function StatCard({ label, value, sub, color = "text-gray-900", href }: StatCardProps) {
+  const inner = (
+    <div className={`bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-1 ${href ? "hover:border-green-400 hover:shadow-sm transition-shadow" : ""}`}>
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
       <p className={`text-3xl font-bold ${color}`}>{value}</p>
       {sub && <p className="text-xs text-gray-400">{sub}</p>}
+      {href && <p className="text-xs text-green-600 mt-1">View details →</p>}
     </div>
   );
+  return href ? <Link href={href}>{inner}</Link> : inner;
 }
 
-function BarRow({ label, count, max, color }: { label: string; count: number; max: number; color: string }) {
+function BarRow({ label, count, max, color, href }: { label: string; count: number; max: number; color: string; href?: string }) {
   const pct = max > 0 ? Math.round((count / max) * 100) : 0;
-  return (
-    <div className="flex items-center gap-3">
+  const inner = (
+    <div className={`flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 ${href ? "hover:bg-gray-50" : ""}`}>
       <span className="text-sm text-gray-700 w-36 shrink-0 capitalize">{label.replace(/_/g, " ")}</span>
       <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
@@ -26,6 +28,7 @@ function BarRow({ label, count, max, color }: { label: string; count: number; ma
       <span className="text-sm font-semibold text-gray-700 w-8 text-right">{count}</span>
     </div>
   );
+  return href ? <Link href={href}>{inner}</Link> : inner;
 }
 
 async function getAnalytics() {
@@ -138,10 +141,10 @@ export default async function AnalyticsPage() {
         <section>
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Overview</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Customers" value={d.customers} />
-            <StatCard label="Open Service" value={d.openService} sub={`${d.totalService} total`} color={d.openService > 10 ? "text-red-600" : "text-gray-900"} />
-            <StatCard label="Open Messages" value={d.openMessages} sub={`${d.totalMessages} total`} />
-            <StatCard label="Pending Storage" value={d.pendingStorage} sub={`${d.totalStorage} total`} />
+            <StatCard label="Customers" value={d.customers} href="/search" />
+            <StatCard label="Open Service" value={d.openService} sub={`${d.totalService} total`} color={d.openService > 10 ? "text-red-600" : "text-gray-900"} href="/analytics/service/open" />
+            <StatCard label="Open Messages" value={d.openMessages} sub={`${d.totalMessages} total`} href="/messages" />
+            <StatCard label="Pending Storage" value={d.pendingStorage} sub={`${d.totalStorage} total`} href="/analytics/storage/requested" />
           </div>
         </section>
 
@@ -149,10 +152,10 @@ export default async function AnalyticsPage() {
         <section>
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">This Week (7 days)</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="New Service Requests" value={d.serviceThisWeek} />
-            <StatCard label="New Parts Requests" value={d.partsThisWeek} />
-            <StatCard label="Avg Backlog Age" value={`${d.avgBacklogDays}d`} sub="open service requests" color={d.avgBacklogDays > 5 ? "text-orange-600" : "text-gray-900"} />
-            <StatCard label="Estimates Approved" value={d.estimatesApproved} sub="last 30 days" color="text-green-700" />
+            <StatCard label="New Service Requests" value={d.serviceThisWeek} href="/analytics/service/new-this-week" />
+            <StatCard label="New Parts Requests" value={d.partsThisWeek} href="/analytics/parts/new-this-week" />
+            <StatCard label="Avg Backlog Age" value={`${d.avgBacklogDays}d`} sub="open service requests" color={d.avgBacklogDays > 5 ? "text-orange-600" : "text-gray-900"} href="/analytics/service/open" />
+            <StatCard label="Estimates Approved" value={d.estimatesApproved} sub="last 30 days" color="text-green-700" href="/analytics/service/awaiting_approval" />
           </div>
         </section>
 
@@ -161,7 +164,7 @@ export default async function AnalyticsPage() {
           <h2 className="font-bold text-gray-900 mb-4">Service Requests by Status (last 30 days)</h2>
           <div className="flex flex-col gap-3">
             {serviceStatuses.map((s) => (
-              <BarRow key={s} label={s} count={d.serviceStatusCounts[s] ?? 0} max={maxServiceStatus} color={barColors[s] ?? "bg-gray-300"} />
+              <BarRow key={s} label={s} count={d.serviceStatusCounts[s] ?? 0} max={maxServiceStatus} color={barColors[s] ?? "bg-gray-300"} href={`/analytics/service/${s}`} />
             ))}
           </div>
         </section>
@@ -171,7 +174,7 @@ export default async function AnalyticsPage() {
           <h2 className="font-bold text-gray-900 mb-4">Winter Storage by Status (all time)</h2>
           <div className="flex flex-col gap-3">
             {storageStatuses.map((s) => (
-              <BarRow key={s} label={s} count={d.storageStatusCounts[s] ?? 0} max={maxStorageStatus} color={barColors[s] ?? "bg-gray-300"} />
+              <BarRow key={s} label={s} count={d.storageStatusCounts[s] ?? 0} max={maxStorageStatus} color={barColors[s] ?? "bg-gray-300"} href={`/analytics/storage/${s}`} />
             ))}
           </div>
         </section>
