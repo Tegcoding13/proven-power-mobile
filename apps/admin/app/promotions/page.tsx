@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Promotion } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
 import { syncWordPress } from "./actions";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 
 export default function PromotionsPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -98,9 +99,10 @@ export default function PromotionsPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <AdminPageHeader title="Promotions" />
+      <div className="max-w-2xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl font-bold text-green-700">Promotions</h1>
         <button
           onClick={handleSyncWordPress}
           disabled={isSyncing}
@@ -190,9 +192,7 @@ export default function PromotionsPage() {
         </ul>
       )}
 
-      <Link href="/" className="text-sm text-green-700">
-        ← Back home
-      </Link>
+      </div>
     </div>
   );
 }

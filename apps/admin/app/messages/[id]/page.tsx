@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Message, MessageAttachment, MessageThread, BusinessAccount } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 import { uploadMessageAttachment, getSignedMessageAttachmentUrl } from "../../../lib/message-attachments";
+import { AdminPageHeader } from "../../../components/AdminPageHeader";
 
 type MessageWithAttachments = Message & { attachments: { id: string; url: string }[] };
 
@@ -145,10 +146,9 @@ export default function AdminThreadDetailPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <div className="flex flex-1 flex-col max-w-2xl mx-auto w-full px-4 py-8">
-      <Link href="/messages" className="text-sm text-green-700 mb-4">
-        ← Back to Message Inbox
-      </Link>
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <AdminPageHeader title={account?.name ?? "Conversation"} backHref="/messages" backLabel="Message Inbox" />
+      <div className="max-w-2xl mx-auto w-full px-4 py-4 flex flex-col flex-1">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold text-black">{account?.name ?? "Customer"}</h1>
@@ -203,6 +203,7 @@ export default function AdminThreadDetailPage({ params }: { params: Promise<{ id
           </button>
         </div>
       </form>
+      </div>
     </div>
   );
 }

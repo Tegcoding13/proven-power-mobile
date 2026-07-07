@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { AdminPageHeader } from "../../../components/AdminPageHeader";
 import type { InventoryListing, InventoryStatus, DealershipLocation } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 import { getPublicInventoryPhotoUrl, uploadInventoryPhoto } from "../../../lib/inventory";
@@ -95,10 +95,9 @@ export default function AdminInventoryDetailPage({ params }: { params: Promise<{
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
-      <Link href="/inventory" className="text-sm text-green-700">
-        ← Back to Inventory
-      </Link>
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <AdminPageHeader title={listing.title} backHref="/inventory" backLabel="Inventory" />
+      <div className="flex flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
 
       <div>
         <h1 className="text-2xl font-bold text-black">{listing.title}</h1>
@@ -176,6 +175,7 @@ export default function AdminInventoryDetailPage({ params }: { params: Promise<{
           </label>
         </div>
       </section>
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import type { PartsRequest, PartsRequestStatus, BusinessAccount } from "@proven-
 import { createClient } from "../../../lib/supabase/client";
 import { getSignedPartsRequestMediaUrl } from "../../../lib/parts-request-media";
 import { StatusBadge } from "../../../components/StatusBadge";
+import { AdminPageHeader } from "../../../components/AdminPageHeader";
 
 const STATUSES: PartsRequestStatus[] = ["submitted", "researching", "in_stock", "ordered", "ready_for_pickup", "fulfilled", "cancelled"];
 
@@ -80,10 +81,9 @@ export default function AdminPartsRequestDetailPage({ params }: { params: Promis
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
-      <Link href="/parts" className="text-sm text-green-700">
-        ← Back to Parts Queue
-      </Link>
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <AdminPageHeader title={account?.name ?? "Parts Request"} backHref="/parts" backLabel="Parts Queue" />
+      <div className="max-w-2xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-black">{account?.name ?? "Customer"}</h1>
         <StatusBadge status={request.status} />
@@ -120,6 +120,7 @@ export default function AdminPartsRequestDetailPage({ params }: { params: Promis
           </div>
         </section>
       ) : null}
+      </div>
     </div>
   );
 }

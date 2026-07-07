@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import type { PartsRequestStatus } from "@proven-power/shared-types";
 import { createServiceRoleClient } from "../../../../lib/supabase/service-role";
 import { StatusBadge } from "../../../../components/StatusBadge";
+import { AdminPageHeader } from "../../../../components/AdminPageHeader";
 
 const VALID_STATUSES = ["submitted", "acknowledged", "ordered", "ready", "completed", "cancelled", "new-this-week"];
 
@@ -72,11 +73,7 @@ export default async function PartsDetailPage({ params }: { params: Promise<{ st
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-[#1a3d2b] text-white px-6 h-14 flex items-center gap-3 shadow-lg">
-        <Link href="/analytics" className="text-green-300 hover:text-white text-sm">← Analytics</Link>
-        <span className="text-white/40">|</span>
-        <span className="font-semibold text-sm">Parts — {label}</span>
-      </header>
+      <AdminPageHeader title={`Parts — ${label}`} backHref="/analytics" backLabel="Analytics" />
 
       <main className="max-w-4xl w-full mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">

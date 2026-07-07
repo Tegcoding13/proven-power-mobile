@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { WinterStorageStatus } from "@proven-power/shared-types";
 import { createServiceRoleClient } from "../../../../lib/supabase/service-role";
+import { AdminPageHeader } from "../../../../components/AdminPageHeader";
 
 const VALID_STATUSES = ["requested", "confirmed", "dropped_off", "stored", "picked_up", "cancelled"];
 
@@ -67,11 +68,7 @@ export default async function StorageDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-[#1a3d2b] text-white px-6 h-14 flex items-center gap-3 shadow-lg">
-        <Link href="/analytics" className="text-green-300 hover:text-white text-sm">← Analytics</Link>
-        <span className="text-white/40">|</span>
-        <span className="font-semibold text-sm">Winter Storage — {label}</span>
-      </header>
+      <AdminPageHeader title={`Winter Storage — ${label}`} backHref="/analytics" backLabel="Analytics" />
 
       <main className="max-w-4xl w-full mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">

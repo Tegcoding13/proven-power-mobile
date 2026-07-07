@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServiceRoleClient } from "../../../lib/supabase/service-role";
 import { StatusBadge } from "../../../components/StatusBadge";
+import { AdminPageHeader } from "../../../components/AdminPageHeader";
 
 type Props = { params: Promise<{ profileId: string }> };
 
@@ -82,11 +83,7 @@ export default async function CustomerDetailPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-[#1a3d2b] text-white px-6 h-14 flex items-center gap-3 shadow-lg">
-        <Link href="/search" className="text-green-300 hover:text-white text-sm">← Search</Link>
-        <span className="text-white/40">|</span>
-        <span className="font-semibold text-sm truncate">{profile.full_name ?? "Customer"}</span>
-      </header>
+      <AdminPageHeader title={profile.full_name ?? "Customer"} backHref="/search" backLabel="Customer Search" />
 
       <main className="max-w-3xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Customer info */}

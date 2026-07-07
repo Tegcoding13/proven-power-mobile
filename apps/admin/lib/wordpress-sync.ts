@@ -79,30 +79,44 @@ export async function syncWordPressPosts(
   const errors: string[] = [];
   let upserted = 0;
 
+  // Load existing wordpress promotions so we can update vs insert
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existing } = await (supabase as any)
+    .from("promotions")
+    .select("id,external_id")
+    .eq("external_source", EXTERNAL_SOURCE);
+
+  const existingByExternalId = new Map<string, string>(
+    ((existing ?? []) as { id: string; external_id: string }[]).map((r) => [r.external_id, r.id])
+  );
+
   for (const post of posts) {
     try {
       const title = stripHtml(post.title.rendered);
       const body = stripHtml(post.excerpt.rendered) || stripHtml(post.content.rendered).slice(0, 500);
       const imageUrl = post.featured_media ? (imageUrlById.get(post.featured_media) ?? null) : null;
       const publishedAt = new Date(post.date).toISOString();
+      const externalId = String(post.id);
 
+      const payload = {
+        external_source: EXTERNAL_SOURCE,
+        external_id: externalId,
+        external_url: post.link,
+        title,
+        body,
+        image_url: imageUrl,
+        is_active: true,
+        starts_at: publishedAt,
+        ends_at: null,
+      };
+
+      const existingId = existingByExternalId.get(externalId);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
-        .from("promotions")
-        .upsert(
-          {
-            external_source: EXTERNAL_SOURCE,
-            external_id: String(post.id),
-            external_url: post.link,
-            title,
-            body,
-            image_url: imageUrl,
-            is_active: true,
-            starts_at: publishedAt,
-            ends_at: null,
-          },
-          { onConflict: "external_source,external_id" }
-        );
+      const { error } = existingId
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? await (supabase as any).from("promotions").update(payload).eq("id", existingId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        : await (supabase as any).from("promotions").insert(payload);
 
       if (error) {
         errors.push(`Post ${post.id}: ${(error as { message: string }).message}`);

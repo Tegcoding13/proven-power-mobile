@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { MessageThread, BusinessAccount, DealershipLocation } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
 import { useStaffRole } from "../../lib/staff-role";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 
 type EnrichedThread = MessageThread & { accountName: string };
 
@@ -52,8 +53,9 @@ export default function MessageInboxPage() {
     .filter((t) => effectiveLocationFilter === "all" || t.dealership_location_id === effectiveLocationFilter);
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-4xl mx-auto w-full">
-      <h1 className="text-2xl font-bold text-green-700">Message Inbox</h1>
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <AdminPageHeader title="Message Inbox" />
+      <div className="max-w-4xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-2">
@@ -113,9 +115,7 @@ export default function MessageInboxPage() {
         </ul>
       )}
 
-      <Link href="/" className="text-sm text-green-700">
-        ← Back home
-      </Link>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { NotificationCategory, NotificationChannel, NotificationRule } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 
 const CATEGORIES: { value: NotificationCategory; label: string; hasLeadTime?: boolean }[] = [
   { value: "maintenance_due", label: "Maintenance due" },
@@ -108,9 +109,10 @@ export default function NotificationRulesPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-3xl mx-auto w-full">
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <AdminPageHeader title="Notification Rules" />
+      <div className="max-w-3xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-green-700">Notification Rules</h1>
         <p className="text-sm text-gray-700 mt-1">
           Dealership-wide defaults for automated alerts. Any account without its own override uses these. (Per-account
           overrides aren&apos;t editable here yet — they share the same <code>notification_rules</code> table, keyed by
@@ -168,9 +170,7 @@ export default function NotificationRulesPage() {
         </tbody>
       </table>
 
-      <Link href="/" className="text-sm text-green-700">
-        ← Back home
-      </Link>
+      </div>
     </div>
   );
 }

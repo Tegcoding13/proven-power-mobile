@@ -67,7 +67,6 @@ export default function AddEquipmentPage() {
     const { data: created, error } = await supabase.from("equipment").insert({
       business_account_id: businessAccount.id,
       added_by_profile_id: userData.user.id,
-      make: make.trim() || null,
       model: model.trim(),
       model_year: modelYear ? Number(modelYear) : null,
       serial_number: serialNumber.trim() || null,

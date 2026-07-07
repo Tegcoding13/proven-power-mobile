@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import Link from "next/link";
 import { inviteStaff } from "./actions";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 
 const DEPARTMENTS = ["manager", "service", "parts", "sales", "office"] as const;
 type Department = typeof DEPARTMENTS[number];
@@ -27,10 +27,7 @@ export default function StaffManagementPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-green-800 text-white px-6 py-4 flex items-center gap-4 shadow-md">
-        <Link href="/" className="text-green-300 hover:text-white text-sm">← Home</Link>
-        <h1 className="font-bold text-lg">Staff Management</h1>
-      </header>
+      <AdminPageHeader title="Staff Management" />
 
       <main className="max-w-2xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Info banner */}

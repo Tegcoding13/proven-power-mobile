@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { searchCustomers, type CustomerResult } from "./actions";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 
 function StatPill({ count, label }: { count: number; label: string }) {
   if (count === 0) return null;
@@ -63,11 +64,7 @@ export default async function SearchPage({
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-[#1a3d2b] text-white px-6 py-0 flex items-center gap-4 h-14 shadow-lg">
-        <Link href="/" className="text-green-300 hover:text-white text-sm">← Home</Link>
-        <span className="text-white/40">|</span>
-        <span className="font-semibold text-sm">Customer Search</span>
-      </header>
+      <AdminPageHeader title="Customer Search" />
 
       <main className="max-w-3xl w-full mx-auto px-4 py-8 flex flex-col gap-6">
         {/* Search form */}

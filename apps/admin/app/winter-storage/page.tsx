@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 import type {
   WinterStorageSignup,
   WinterStorageStatus,
@@ -278,13 +279,9 @@ export default function AdminWinterStoragePage() {
 
   return (
     <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="text-sm text-green-700">← Home</Link>
-          <h1 className="text-xl font-bold text-gray-900">Winter Storage</h1>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
+      <AdminPageHeader title="Winter Storage" />
+      {/* Toolbar */}
+      <div className="flex items-center justify-end px-4 py-3 bg-white border-b border-gray-200 gap-2 flex-wrap">
           <button
             onClick={openManualModal}
             className="min-h-9 rounded-lg bg-green-600 px-4 text-sm font-semibold text-white"
@@ -304,7 +301,6 @@ export default function AdminWinterStoragePage() {
             <button onClick={() => setView("list")} className={`min-h-9 px-4 font-semibold border-l border-gray-300 ${view === "list" ? "bg-green-600 text-white" : "bg-white text-black"}`}>List</button>
           </div>
         </div>
-      </div>
 
       {/* ── New Requests Banner ── */}
       {!isLoading && signups.filter((s) => s.status === "requested").length > 0 && (

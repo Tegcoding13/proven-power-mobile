@@ -14,6 +14,7 @@ import type {
 import { createClient } from "../../../lib/supabase/client";
 import { getSignedServiceRequestMediaUrl } from "../../../lib/service-request-media";
 import { StatusBadge } from "../../../components/StatusBadge";
+import { AdminPageHeader } from "../../../components/AdminPageHeader";
 
 const STATUSES: ServiceRequestStatus[] = [
   "submitted",
@@ -150,14 +151,18 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
   }
 
   if (isLoading || !request) {
-    return <p className="px-4 py-8 text-gray-700">Loading...</p>;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <AdminPageHeader title="Service Request" backHref="/service" backLabel="Service Queue" />
+        <p className="px-4 py-8 text-gray-700">Loading...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-2xl mx-auto w-full">
-      <Link href="/service" className="text-sm text-green-700">
-        ← Back to Service Queue
-      </Link>
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <AdminPageHeader title={account?.name ?? "Service Request"} backHref="/service" backLabel="Service Queue" />
+      <div className="max-w-2xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-black">{account?.name ?? "Customer"}</h1>
         <p className="text-gray-700">{equipment?.nickname || equipment?.model}</p>
@@ -241,6 +246,7 @@ export default function AdminServiceRequestDetailPage({ params }: { params: Prom
           ))}
         </ul>
       </section>
+      </div>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import Link from "next/link";
 import { createClient } from "../../lib/supabase/client";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 import { saveNotificationSettings, sendTestEmail } from "./actions";
 
 type DeptSetting = {
@@ -180,10 +180,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-green-800 text-white px-6 py-4 flex items-center gap-4 shadow-md">
-        <Link href="/" className="text-green-300 hover:text-white text-sm">← Home</Link>
-        <h1 className="font-bold text-lg">Settings</h1>
-      </header>
+      <AdminPageHeader title="Settings" />
 
       <main className="max-w-2xl w-full mx-auto px-4 py-8 flex flex-col gap-6">
         <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">

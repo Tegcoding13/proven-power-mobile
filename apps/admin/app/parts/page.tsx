@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { PartsRequest, BusinessAccount, DealershipLocation } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
 import { useStaffRole } from "../../lib/staff-role";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 import { StatusBadge } from "../../components/StatusBadge";
 
 type EnrichedRequest = PartsRequest & { accountName: string };
@@ -46,8 +47,9 @@ export default function PartsQueuePage() {
     effectiveLocationFilter === "all" ? requests : requests.filter((r) => r.dealership_location_id === effectiveLocationFilter);
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-4xl mx-auto w-full">
-      <h1 className="text-2xl font-bold text-green-700">Parts Queue</h1>
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <AdminPageHeader title="Parts Queue" />
+      <div className="max-w-4xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
 
       <div className="flex flex-wrap gap-2">
         <button
@@ -106,9 +108,7 @@ export default function PartsQueuePage() {
         </table>
       )}
 
-      <Link href="/" className="text-sm text-green-700">
-        ← Back home
-      </Link>
+      </div>
     </div>
   );
 }

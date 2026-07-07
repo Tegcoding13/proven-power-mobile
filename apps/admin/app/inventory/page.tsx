@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { InventoryListing } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
 import { syncMachineFinder } from "./actions";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 
 export default function AdminInventoryListPage() {
   const [listings, setListings] = useState<InventoryListing[]>([]);
@@ -57,9 +58,10 @@ export default function AdminInventoryListPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-4 py-8 max-w-4xl mx-auto w-full">
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
+      <AdminPageHeader title="Inventory" />
+      <div className="max-w-4xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h1 className="text-2xl font-bold text-green-700">Inventory</h1>
         <div className="flex gap-2">
           <button
             onClick={handleSync}
@@ -109,9 +111,7 @@ export default function AdminInventoryListPage() {
         </table>
       )}
 
-      <Link href="/" className="text-sm text-green-700">
-        ← Back home
-      </Link>
+      </div>
     </div>
   );
 }

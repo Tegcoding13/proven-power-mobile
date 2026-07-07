@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createServiceRoleClient } from "../../lib/supabase/service-role";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 
 type StatCardProps = { label: string; value: number | string; sub?: string; color?: string; href?: string };
 
@@ -131,11 +132,7 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-[#1a3d2b] text-white px-6 h-14 flex items-center gap-3 shadow-lg">
-        <Link href="/" className="text-green-300 hover:text-white text-sm">← Home</Link>
-        <span className="text-white/40">|</span>
-        <span className="font-semibold text-sm">Analytics</span>
-      </header>
+      <AdminPageHeader title="Analytics" />
 
       <main className="max-w-4xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Top-level numbers */}
