@@ -3,6 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "../../lib/supabase/server";
 
+async function requireManager() {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims.sub;
+  if (!userId) throw new Error("Not authenticated.");
+  const { data: role } = await supabase
+    .from("staff_roles")
+    .select("department")
+    .eq("profile_id", userId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (role?.department !== "manager") throw new Error("Manager access required.");
+}
+
 type NotificationSettingsRow = {
   department: string;
   email_recipients: string[];
@@ -19,6 +33,7 @@ export async function saveNotificationSettings(
   emailEnabled: boolean,
   smsEnabled: boolean
 ): Promise<string | null> {
+  try { await requireManager(); } catch (e) { return e instanceof Error ? e.message : "Unauthorized."; }
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
@@ -38,6 +53,7 @@ export async function saveNotificationSettings(
 }
 
 export async function sendTestEmail(department: string): Promise<string | null> {
+  try { await requireManager(); } catch (e) { return e instanceof Error ? e.message : "Unauthorized."; }
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase as any)

@@ -9,6 +9,7 @@ type NavItem = {
   description: string;
   icon: React.ReactNode;
   countKey: string | null;
+  managerOnly?: boolean;
 };
 
 function IconWrench() {
@@ -106,8 +107,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/notifications", label: "Notification Rules", description: "Push & SMS automation",              icon: <IconBell />,      countKey: null        },
   { href: "/analytics",     label: "Analytics",           description: "Request volume, response times & trends", icon: <IconChart />,   countKey: null        },
   { href: "/search",        label: "Customer Search",     description: "Look up customers, equipment & requests", icon: <IconSearch />,  countKey: null        },
-  { href: "/staff",        label: "Staff Management",    description: "Invite staff & manage roles",         icon: <IconUsers />,     countKey: null        },
-  { href: "/settings",     label: "Settings",            description: "Notification emails & SMS per dept",  icon: <IconSettings />,  countKey: null        },
+  { href: "/staff",        label: "Staff Management",    description: "Invite staff & manage roles",         icon: <IconUsers />,     countKey: null, managerOnly: true },
+  { href: "/settings",     label: "Settings",            description: "Notification emails & SMS per dept",  icon: <IconSettings />,  countKey: null, managerOnly: true },
 ];
 
 export default async function StaffHomePage() {
@@ -188,7 +189,7 @@ export default async function StaffHomePage() {
 
         {/* Card grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.managerOnly || department === "manager").map((item) => {
             const badge = item.countKey ? counts[item.countKey] : 0;
             return (
               <Link
