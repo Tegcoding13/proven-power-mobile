@@ -63,8 +63,8 @@ async function getRequests(status: string) {
   });
 }
 
-export default async function PartsDetailPage({ params }: { params: { status: string } }) {
-  const { status } = params;
+export default async function PartsDetailPage({ params }: { params: Promise<{ status: string }> }) {
+  const { status } = await params;
   if (!VALID_STATUSES.includes(status)) notFound();
 
   const requests = await getRequests(status);

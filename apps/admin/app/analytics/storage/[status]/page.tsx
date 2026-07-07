@@ -58,8 +58,8 @@ async function getSignups(status: string) {
   }));
 }
 
-export default async function StorageDetailPage({ params }: { params: { status: string } }) {
-  const { status } = params;
+export default async function StorageDetailPage({ params }: { params: Promise<{ status: string }> }) {
+  const { status } = await params;
   if (!VALID_STATUSES.includes(status)) notFound();
 
   const signups = await getSignups(status);
