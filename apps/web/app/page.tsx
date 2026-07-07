@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { createClient } from "../lib/supabase/server";
 
-function initials(name?: string | null): string {
-  if (!name) return "?";
-  return name.split(" ").map((part) => part[0]).slice(0, 2).join("").toUpperCase();
-}
-
 const QUICK_ACTIONS = [
   { href: "/garage", label: "My Equipment", subtitle: "Manage your garage", icon: "🚜" },
   { href: "/service/new", label: "Schedule Service", subtitle: "Request service", icon: "🔧" },
@@ -84,62 +79,69 @@ export default async function HomePage() {
     }
   }
 
+  const firstName = profile?.full_name?.split(" ")[0] ?? "there";
+
   return (
     <div className="flex flex-1 flex-col bg-gray-50">
-      <div
-        className="px-4 pt-6 pb-10"
-        style={{ background: "linear-gradient(180deg, #0B5D3B 0%, #042217 100%)" }}
-      >
-        <div className="max-w-2xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
-              {initials(profile?.full_name)}
-            </div>
-            <div>
-              <p className="text-white/70 text-sm">Welcome</p>
-              <p className="text-white text-xl font-bold">{profile?.full_name?.split(" ")[0] ?? "there"} 👋</p>
+      {/* Header — solid brand green, no gradient */}
+      <div className="bg-[#1a3d2b] px-4 pt-5 pb-0">
+        <div className="max-w-2xl mx-auto w-full">
+          {/* Top bar: logo + actions */}
+          <div className="flex items-center justify-between mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Proven Power" className="h-8 w-auto" />
+            <div className="flex items-center gap-2">
+              <Link
+                href="/notifications"
+                className="relative w-9 h-9 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+                title="Notifications"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                {unreadCount && unreadCount > 0 ? (
+                  <span className="absolute top-0 right-0 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                ) : null}
+              </Link>
+              <Link
+                href="/account"
+                className="w-9 h-9 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+                title="Account"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+              </Link>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/notifications"
-              className="relative w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-white"
-              title="Notifications"
-            >
-              🔔
-              {unreadCount && unreadCount > 0 ? (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              ) : null}
-            </Link>
-            <Link
-              href="/account"
-              className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-white"
-              title="Account"
-            >
-              👤
-            </Link>
-          </div>
-        </div>
 
-        <div className="max-w-2xl mx-auto w-full grid grid-cols-3 gap-2 mt-6">
-          <div className="bg-white/15 rounded-xl p-3 text-center">
-            <p className="text-white text-lg font-bold">{equipmentCount}</p>
-            <p className="text-white/80 text-xs">Equipment</p>
+          {/* Greeting */}
+          <div className="mb-5">
+            <p className="text-white/50 text-xs font-medium tracking-widest uppercase">Welcome back</p>
+            <p className="text-white text-2xl font-bold mt-0.5">{firstName}</p>
           </div>
-          <div className="bg-white/15 rounded-xl p-3 text-center">
-            <p className="text-white text-lg font-bold">{activeServiceCount}</p>
-            <p className="text-white/80 text-xs">Active Service</p>
-          </div>
-          <div className="bg-white/15 rounded-xl p-3 text-center">
-            <p className="text-white/60 text-lg font-bold">Soon</p>
-            <p className="text-white/80 text-xs">Rewards</p>
+
+          {/* Stat cards — white, bleed below header */}
+          <div className="grid grid-cols-3 gap-2 mb-[-20px]">
+            <div className="bg-white rounded-xl p-3 text-center shadow-md">
+              <p className="text-[#1a3d2b] text-xl font-bold">{equipmentCount}</p>
+              <p className="text-gray-500 text-xs mt-0.5">Equipment</p>
+            </div>
+            <div className="bg-white rounded-xl p-3 text-center shadow-md">
+              <p className="text-[#1a3d2b] text-xl font-bold">{activeServiceCount}</p>
+              <p className="text-gray-500 text-xs mt-0.5">Active Service</p>
+            </div>
+            <div className="bg-white rounded-xl p-3 text-center shadow-md">
+              <p className="text-gray-300 text-xl font-bold">Soon</p>
+              <p className="text-gray-500 text-xs mt-0.5">Rewards</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto w-full px-4 -mt-6 flex flex-col gap-6 pb-16">
+      <div className="max-w-2xl mx-auto w-full px-4 pt-10 flex flex-col gap-6 pb-16">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {QUICK_ACTIONS.map((action) => (
             <Link
