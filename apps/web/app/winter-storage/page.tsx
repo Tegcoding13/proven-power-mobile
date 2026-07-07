@@ -33,7 +33,7 @@ export default function WinterStorageListPage() {
         .eq("business_account_id", businessAccount.id)
         .order("created_at", { ascending: false });
 
-      const equipmentIds = [...new Set((data ?? []).map((s) => s.equipment_id))];
+      const equipmentIds = [...new Set((data ?? []).map((s) => s.equipment_id).filter((id): id is string => id != null))];
       const { data: equipmentRows } = equipmentIds.length
         ? await supabase.from("equipment").select("*").in("id", equipmentIds)
         : { data: [] as Equipment[] };
@@ -42,7 +42,7 @@ export default function WinterStorageListPage() {
       setSignups(
         (data ?? []).map((s) => ({
           ...s,
-          equipmentLabel: equipmentById.get(s.equipment_id)?.nickname || equipmentById.get(s.equipment_id)?.model || "Equipment",
+          equipmentLabel: (s.equipment_id ? equipmentById.get(s.equipment_id)?.nickname || equipmentById.get(s.equipment_id)?.model : null) || "Equipment",
         }))
       );
       setIsLoading(false);
