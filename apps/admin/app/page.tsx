@@ -72,6 +72,14 @@ function IconUsers() {
     </svg>
   );
 }
+function IconChart() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+      <line x1="2" y1="20" x2="22" y2="20" />
+    </svg>
+  );
+}
 function IconSearch() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -96,6 +104,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/inventory",    label: "Inventory",           description: "Equipment listings",                  icon: <IconTruck />,     countKey: null        },
   { href: "/promotions",   label: "Promotions",          description: "Customer promotions & announcements", icon: <IconMegaphone />, countKey: null        },
   { href: "/notifications", label: "Notification Rules", description: "Push & SMS automation",              icon: <IconBell />,      countKey: null        },
+  { href: "/analytics",     label: "Analytics",           description: "Request volume, response times & trends", icon: <IconChart />,   countKey: null        },
   { href: "/search",        label: "Customer Search",     description: "Look up customers, equipment & requests", icon: <IconSearch />,  countKey: null        },
   { href: "/staff",        label: "Staff Management",    description: "Invite staff & manage roles",         icon: <IconUsers />,     countKey: null        },
   { href: "/settings",     label: "Settings",            description: "Notification emails & SMS per dept",  icon: <IconSettings />,  countKey: null        },
