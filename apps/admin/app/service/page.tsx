@@ -77,7 +77,11 @@ export default function ServiceQueuePage() {
     })();
   }, []);
 
-  const effectiveLocationFilter = locationFilter ?? (isLoadingStaffRole ? "all" : (staffRole?.dealership_location_id ?? "all"));
+  // If staff is locked to one store, ignore any manual filter selection
+  const restrictedToLocation = isLoadingStaffRole ? null : (staffRole?.dealership_location_id ?? null);
+  const effectiveLocationFilter = restrictedToLocation ?? (locationFilter ?? "all");
+  const canSwitchStores = !restrictedToLocation;
+
   const locationNameById = new Map(locations.map((l) => [l.id, l.name.replace("Proven Power - ", "")]));
 
   const allVisible = effectiveLocationFilter === "all"
@@ -103,19 +107,21 @@ export default function ServiceQueuePage() {
       <AdminPageHeader title="Service Queue" />
       <div className="max-w-4xl mx-auto w-full px-4 py-6 flex flex-col gap-5">
 
-        {/* Location filter */}
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setLocationFilter("all")}
-            className={`min-h-9 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === "all" ? "bg-green-600 text-white" : "bg-gray-100 text-black"}`}>
-            All Stores
-          </button>
-          {locations.map((loc) => (
-            <button key={loc.id} onClick={() => setLocationFilter(loc.id)}
-              className={`min-h-9 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === loc.id ? "bg-green-600 text-white" : "bg-gray-100 text-black"}`}>
-              {loc.name.replace("Proven Power - ", "")}
+        {/* Location filter — hidden if staff is locked to one store */}
+        {canSwitchStores && (
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setLocationFilter("all")}
+              className={`min-h-9 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === "all" ? "bg-green-600 text-white" : "bg-gray-100 text-black"}`}>
+              All Stores
             </button>
-          ))}
-        </div>
+            {locations.map((loc) => (
+              <button key={loc.id} onClick={() => setLocationFilter(loc.id)}
+                className={`min-h-9 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === loc.id ? "bg-green-600 text-white" : "bg-gray-100 text-black"}`}>
+                {loc.name.replace("Proven Power - ", "")}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex border-b border-gray-200 gap-1">

@@ -40,7 +40,9 @@ export default function PartsQueuePage() {
     })();
   }, []);
 
-  const effectiveLocationFilter = locationFilter ?? (isLoadingStaffRole ? "all" : (staffRole?.dealership_location_id ?? "all"));
+  const restrictedToLocation = isLoadingStaffRole ? null : (staffRole?.dealership_location_id ?? null);
+  const effectiveLocationFilter = restrictedToLocation ?? (locationFilter ?? "all");
+  const canSwitchStores = !restrictedToLocation;
 
   const locationNameById = new Map(locations.map((l) => [l.id, l.name.replace("Proven Power - ", "")]));
   const visibleRequests =
@@ -51,23 +53,25 @@ export default function PartsQueuePage() {
       <AdminPageHeader title="Parts Queue" />
       <div className="max-w-4xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setLocationFilter("all")}
-          className={`min-h-10 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === "all" ? "bg-green-600 text-white" : "bg-gray-100 text-black"}`}
-        >
-          All Stores
-        </button>
-        {locations.map((location) => (
+      {canSwitchStores && (
+        <div className="flex flex-wrap gap-2">
           <button
-            key={location.id}
-            onClick={() => setLocationFilter(location.id)}
-            className={`min-h-10 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === location.id ? "bg-green-600 text-white" : "bg-gray-100 text-black"}`}
+            onClick={() => setLocationFilter("all")}
+            className={`min-h-10 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === "all" ? "bg-green-600 text-white" : "bg-gray-100 text-black"}`}
           >
-            {location.name.replace("Proven Power - ", "")}
+            All Stores
           </button>
-        ))}
-      </div>
+          {locations.map((location) => (
+            <button
+              key={location.id}
+              onClick={() => setLocationFilter(location.id)}
+              className={`min-h-10 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === location.id ? "bg-green-600 text-white" : "bg-gray-100 text-black"}`}
+            >
+              {location.name.replace("Proven Power - ", "")}
+            </button>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-gray-700">Loading...</p>
