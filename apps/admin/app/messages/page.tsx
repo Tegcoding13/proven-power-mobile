@@ -45,7 +45,9 @@ export default function MessageInboxPage() {
     })();
   }, []);
 
-  const effectiveLocationFilter = locationFilter ?? (isLoadingStaffRole ? "all" : (staffRole?.dealership_location_id ?? "all"));
+  const restrictedToLocation = isLoadingStaffRole ? null : (staffRole?.dealership_location_id ?? null);
+  const effectiveLocationFilter = restrictedToLocation ?? (locationFilter ?? "all");
+  const canSwitchStores = !restrictedToLocation;
 
   const locationNameById = new Map(locations.map((l) => [l.id, l.name.replace("Proven Power - ", "")]));
   const visibleThreads = threads
@@ -71,23 +73,25 @@ export default function MessageInboxPage() {
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setLocationFilter("all")}
-            className={`min-h-10 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === "all" ? "bg-green-700 text-white" : "bg-gray-100 text-black"}`}
-          >
-            All Stores
-          </button>
-          {locations.map((location) => (
+        {canSwitchStores && (
+          <div className="flex flex-wrap gap-2">
             <button
-              key={location.id}
-              onClick={() => setLocationFilter(location.id)}
-              className={`min-h-10 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === location.id ? "bg-green-700 text-white" : "bg-gray-100 text-black"}`}
+              onClick={() => setLocationFilter("all")}
+              className={`min-h-10 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === "all" ? "bg-green-700 text-white" : "bg-gray-100 text-black"}`}
             >
-              {location.name.replace("Proven Power - ", "")}
+              All Stores
             </button>
-          ))}
-        </div>
+            {locations.map((location) => (
+              <button
+                key={location.id}
+                onClick={() => setLocationFilter(location.id)}
+                className={`min-h-10 rounded-full px-3 text-sm font-semibold ${effectiveLocationFilter === location.id ? "bg-green-700 text-white" : "bg-gray-100 text-black"}`}
+              >
+                {location.name.replace("Proven Power - ", "")}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {isLoading ? (

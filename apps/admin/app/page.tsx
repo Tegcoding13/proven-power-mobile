@@ -117,19 +117,28 @@ export default async function StaffHomePage() {
   const { data: claims } = await supabase.auth.getClaims();
   const userId = claims?.claims.sub;
 
+  const [{ data: profile }, { data: staffRole }] = await Promise.all([
+    userId ? supabase.from("profiles").select("*").eq("id", userId).single() : Promise.resolve({ data: null }),
+    userId ? supabase.from("staff_roles").select("department, dealership_location_id").eq("profile_id", userId).single() : Promise.resolve({ data: null }),
+  ]);
+
+  const locId = staffRole?.dealership_location_id ?? null;
+
   const [
-    { data: profile },
-    { data: staffRole },
     { count: newServiceCount },
     { count: newPartsCount },
     { count: newMessageCount },
     { count: newStorageCount },
   ] = await Promise.all([
-    userId ? supabase.from("profiles").select("*").eq("id", userId).single() : Promise.resolve({ data: null }),
-    userId ? supabase.from("staff_roles").select("department, dealership_location_id").eq("profile_id", userId).single() : Promise.resolve({ data: null }),
-    supabase.from("service_requests").select("*", { count: "exact", head: true }).eq("status", "submitted"),
-    supabase.from("parts_requests").select("*", { count: "exact", head: true }).eq("status", "submitted"),
-    supabase.from("message_threads").select("*", { count: "exact", head: true }).eq("status", "open"),
+    locId
+      ? supabase.from("service_requests").select("*", { count: "exact", head: true }).eq("status", "submitted").eq("dealership_location_id", locId)
+      : supabase.from("service_requests").select("*", { count: "exact", head: true }).eq("status", "submitted"),
+    locId
+      ? supabase.from("parts_requests").select("*", { count: "exact", head: true }).eq("status", "submitted").eq("dealership_location_id", locId)
+      : supabase.from("parts_requests").select("*", { count: "exact", head: true }).eq("status", "submitted"),
+    locId
+      ? supabase.from("message_threads").select("*", { count: "exact", head: true }).eq("status", "open").eq("dealership_location_id", locId)
+      : supabase.from("message_threads").select("*", { count: "exact", head: true }).eq("status", "open"),
     supabase.from("winter_storage_signups").select("*", { count: "exact", head: true }).eq("status", "requested"),
   ]);
 
