@@ -121,12 +121,18 @@ function StorageCard({ item, onCancelled }: { item: SignupWithEquipment; onCance
   const label = STATUS_LABELS[item.status ?? "requested"] ?? item.status;
   const [confirming, setConfirming] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   async function handleCancel() {
     setIsCancelling(true);
+    setCancelError(null);
     const supabase = createClient();
-    await supabase.from("winter_storage_signups").update({ status: "cancelled" }).eq("id", item.id);
+    const { error } = await supabase
+      .from("winter_storage_signups")
+      .update({ status: "cancelled" })
+      .eq("id", item.id);
     setIsCancelling(false);
+    if (error) { setCancelError("Could not cancel — please contact the dealership."); return; }
     setConfirming(false);
     onCancelled();
   }
@@ -168,21 +174,24 @@ function StorageCard({ item, onCancelled }: { item: SignupWithEquipment; onCance
           </button>
         )}
         {confirming && (
-          <div className="mt-3 flex items-center gap-3 flex-wrap">
-            <p className="text-xs text-gray-600">Are you sure you want to cancel?</p>
-            <button
-              onClick={handleCancel}
-              disabled={isCancelling}
-              className="text-xs font-bold text-red-600 hover:text-red-800 disabled:opacity-50 transition-colors"
-            >
-              {isCancelling ? "Cancelling…" : "Yes, cancel"}
-            </button>
-            <button
-              onClick={() => setConfirming(false)}
-              className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              Keep it
-            </button>
+          <div className="mt-3 flex flex-col gap-1.5">
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-xs text-gray-600">Are you sure you want to cancel?</p>
+              <button
+                onClick={handleCancel}
+                disabled={isCancelling}
+                className="text-xs font-bold text-red-600 hover:text-red-800 disabled:opacity-50 transition-colors"
+              >
+                {isCancelling ? "Cancelling…" : "Yes, cancel"}
+              </button>
+              <button
+                onClick={() => { setConfirming(false); setCancelError(null); }}
+                className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                Keep it
+              </button>
+            </div>
+            {cancelError && <p className="text-xs text-red-500">{cancelError}</p>}
           </div>
         )}
       </div>
