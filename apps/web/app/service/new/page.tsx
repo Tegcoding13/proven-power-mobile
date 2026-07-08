@@ -70,6 +70,7 @@ export default function NewServiceRequestPage() {
       requested_by_profile_id: userData.user.id,
       request_type: requestType,
       description: fullDescription,
+      dealership_location_id: businessAccount.primary_location_id ?? null,
     }).select("*").single();
 
     if (error || !created) { setErrorMessage(error?.message ?? "Failed to submit request."); setIsSubmitting(false); return; }
