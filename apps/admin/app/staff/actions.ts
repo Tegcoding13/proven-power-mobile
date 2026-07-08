@@ -50,7 +50,7 @@ export async function getStaffList(): Promise<StaffMember[]> {
   });
 }
 
-export async function inviteStaff(
+export async function createStaff(
   _prev: string | null,
   formData: FormData
 ): Promise<string | null> {
@@ -63,21 +63,24 @@ export async function inviteStaff(
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const fullName = String(formData.get("full_name") ?? "").trim();
   const department = String(formData.get("department") ?? "").trim();
+  const password = String(formData.get("password") ?? "").trim();
   const locationId = String(formData.get("location_id") ?? "").trim() || null;
 
-  if (!email || !fullName || !department) return "All fields are required.";
+  if (!email || !fullName || !department || !password) return "All fields are required.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Invalid email address.";
+  if (password.length < 8) return "Password must be at least 8 characters.";
 
   const admin = createServiceRoleClient();
 
-  const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL ?? "";
-  const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: fullName },
-    redirectTo: `${adminUrl}/auth/callback?next=/auth/set-password`,
+  const { data: created, error: createErr } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
   });
 
-  if (inviteErr) return inviteErr.message;
-  const newUserId = invited.user.id;
+  if (createErr) return createErr.message;
+  const newUserId = created.user.id;
 
   const { error: profileErr } = await admin.from("profiles").upsert({
     id: newUserId,
@@ -116,6 +119,24 @@ export async function updateStaffRole(
 
   if (error) return error.message;
   revalidatePath("/staff");
+  return null;
+}
+
+export async function updateStaffPassword(
+  profileId: string,
+  newPassword: string
+): Promise<string | null> {
+  try {
+    await requireManager();
+  } catch (e: unknown) {
+    return e instanceof Error ? e.message : "Unauthorized.";
+  }
+
+  if (newPassword.length < 8) return "Password must be at least 8 characters.";
+
+  const admin = createServiceRoleClient();
+  const { error } = await admin.auth.admin.updateUserById(profileId, { password: newPassword });
+  if (error) return error.message;
   return null;
 }
 
