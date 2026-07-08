@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 type Props = {
   title: string;
@@ -7,6 +11,13 @@ type Props = {
 };
 
 export function AdminPageHeader({ title, backHref, backLabel }: Props) {
+  const router = useRouter();
+
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 60_000);
+    return () => clearInterval(id);
+  }, [router]);
+
   return (
     <div className="sticky top-0 z-20 bg-[#1a3d2b] px-4 h-14 flex items-center justify-between shadow-md shrink-0">
       <div className="flex items-center gap-3 min-w-0">
@@ -21,7 +32,6 @@ export function AdminPageHeader({ title, backHref, backLabel }: Props) {
         <span className="text-white font-semibold text-base truncate">{title}</span>
       </div>
 
-      {/* Home button — always visible */}
       <Link href="/" title="Dashboard home"
         className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors shrink-0 text-sm font-medium">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
