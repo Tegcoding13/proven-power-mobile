@@ -139,7 +139,9 @@ export default async function StaffHomePage() {
     locId
       ? supabase.from("message_threads").select("*", { count: "exact", head: true }).eq("status", "open").eq("dealership_location_id", locId)
       : supabase.from("message_threads").select("*", { count: "exact", head: true }).eq("status", "open"),
-    supabase.from("winter_storage_signups").select("*", { count: "exact", head: true }).eq("status", "requested"),
+    locId
+      ? supabase.from("winter_storage_signups").select("*", { count: "exact", head: true }).eq("status", "requested").eq("dealership_location_id", locId)
+      : supabase.from("winter_storage_signups").select("*", { count: "exact", head: true }).eq("status", "requested"),
   ]);
 
   const counts: Record<string, number> = {

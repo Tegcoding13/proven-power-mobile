@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { AdminPageHeader } from "../../components/AdminPageHeader";
+import { useStaffRole } from "../../lib/staff-role";
 import type {
   WinterStorageSignup,
   WinterStorageStatus,
@@ -10,6 +11,7 @@ import type {
   Equipment,
   StorageCalendarDay,
   StorageZone,
+  DealershipLocation,
 } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
 
@@ -66,6 +68,7 @@ function formatDateShort(dateStr: string) {
 }
 
 type ManualBookingForm = {
+  locationId: string;
   name: string;
   phone: string;
   email: string;
@@ -78,21 +81,24 @@ type ManualBookingForm = {
   status: WinterStorageStatus;
 };
 
-function emptyForm(dropoffId = "", pickupId = ""): ManualBookingForm {
-  return { name: "", phone: "", email: "", address: "", unit: "", serialNumber: "", tagNumber: "", dropoffDayId: dropoffId, pickupDayId: pickupId, status: "confirmed" };
+function emptyForm(dropoffId = "", pickupId = "", locationId = ""): ManualBookingForm {
+  return { locationId, name: "", phone: "", email: "", address: "", unit: "", serialNumber: "", tagNumber: "", dropoffDayId: dropoffId, pickupDayId: pickupId, status: "confirmed" };
 }
 
 export default function AdminWinterStoragePage() {
   const today = useMemo(() => new Date(), []);
+  const { staffRole, isLoading: isLoadingStaffRole } = useStaffRole();
 
   const [currentMonth, setCurrentMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [zoneFilter, setZoneFilter] = useState<string>("all");
+  const [locationFilter, setLocationFilter] = useState<string | null>(null);
 
   const [calendarDays, setCalendarDays] = useState<DayAvailability[]>([]);
   const [signups, setSignups] = useState<EnrichedSignup[]>([]);
   const [zones, setZones] = useState<StorageZone[]>([]);
+  const [locations, setLocations] = useState<DealershipLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Add-day modal
@@ -108,13 +114,15 @@ export default function AdminWinterStoragePage() {
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const [{ data: calRows }, { data: signupRows }, { data: zoneRows }] = await Promise.all([
+    const [{ data: calRows }, { data: signupRows }, { data: zoneRows }, { data: locationRows }] = await Promise.all([
       supabase.from("storage_calendar_days").select("*").order("date", { ascending: true }),
       supabase.from("winter_storage_signups").select("*").order("created_at", { ascending: false }),
       supabase.from("storage_zones").select("*").order("name", { ascending: true }),
+      supabase.from("dealership_locations").select("*").order("name", { ascending: true }),
     ]);
 
     setZones(zoneRows ?? []);
+    setLocations(locationRows ?? []);
 
     const accountIds = [...new Set((signupRows ?? []).map((s) => s.business_account_id).filter(Boolean))] as string[];
     const equipmentIds = [...new Set((signupRows ?? []).map((s) => s.equipment_id).filter(Boolean))] as string[];
@@ -153,6 +161,15 @@ export default function AdminWinterStoragePage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const restrictedToLocation = isLoadingStaffRole ? null : (staffRole?.dealership_location_id ?? null);
+  const effectiveLocationFilter = restrictedToLocation ?? (locationFilter ?? "all");
+  const canSwitchStores = !restrictedToLocation;
+  const locationNameById = new Map(locations.map((l) => [l.id, l.name.replace("Proven Power - ", "")]));
+
+  const visibleSignups = effectiveLocationFilter === "all"
+    ? signups
+    : signups.filter((s) => s.dealership_location_id === effectiveLocationFilter);
 
   const grid = useMemo(() => getCalendarGrid(currentMonth.getFullYear(), currentMonth.getMonth()), [currentMonth]);
   const miniGrid = useMemo(() => getMiniCalendarGrid(currentMonth.getFullYear(), currentMonth.getMonth()), [currentMonth]);
@@ -219,6 +236,7 @@ export default function AdminWinterStoragePage() {
     if (!manualForm.name.trim()) { setManualError("Customer name is required."); return; }
     if (!manualForm.unit.trim()) { setManualError("Unit is required."); return; }
     if (!manualForm.dropoffDayId && !manualForm.pickupDayId) { setManualError("Select at least a drop-off or pick-up date."); return; }
+    if (canSwitchStores && !manualForm.locationId) { setManualError("Select a store location."); return; }
 
     setIsSavingManual(true);
     const supabase = createClient();
@@ -240,6 +258,7 @@ export default function AdminWinterStoragePage() {
       manual_unit: manualForm.unit.trim(),
       manual_serial_number: manualForm.serialNumber.trim() || null,
       manual_tag_number: manualForm.tagNumber.trim() || null,
+      dealership_location_id: manualForm.locationId || null,
     });
 
     setIsSavingManual(false);
@@ -250,12 +269,12 @@ export default function AdminWinterStoragePage() {
   }
 
   function openManualModal() {
-    // Pre-fill dates based on selected day
     const dateStr = selectedDay ? toDateStr(selectedDay) : null;
     const dayEvents = dateStr ? (calendarDayMap.get(dateStr) ?? []) : [];
     const dropoffDay = dayEvents.find((d) => d.day_type === "dropoff");
     const pickupDay = dayEvents.find((d) => d.day_type === "pickup");
-    setManualForm(emptyForm(dropoffDay?.id ?? "", pickupDay?.id ?? ""));
+    const defaultLocId = restrictedToLocation ?? (effectiveLocationFilter !== "all" ? effectiveLocationFilter : "");
+    setManualForm(emptyForm(dropoffDay?.id ?? "", pickupDay?.id ?? "", defaultLocId));
     setManualError(null);
     setShowManualModal(true);
   }
@@ -271,7 +290,7 @@ export default function AdminWinterStoragePage() {
   const dropoffDayOptions = calendarDays.filter((d) => d.day_type === "dropoff").sort((a, b) => a.date.localeCompare(b.date));
   const pickupDayOptions = calendarDays.filter((d) => d.day_type === "pickup").sort((a, b) => a.date.localeCompare(b.date));
 
-  const allSignupsForList = [...signups].sort((a, b) => {
+  const allSignupsForList = [...visibleSignups].sort((a, b) => {
     const dateA = a.requested_dropoff_date ?? a.created_at;
     const dateB = b.requested_dropoff_date ?? b.created_at;
     return dateA < dateB ? -1 : 1;
@@ -288,6 +307,16 @@ export default function AdminWinterStoragePage() {
           >
             + Add Customer
           </button>
+          {canSwitchStores && (
+            <select
+              value={effectiveLocationFilter}
+              onChange={(e) => setLocationFilter(e.target.value === "all" ? null : e.target.value)}
+              className="min-h-9 rounded-lg border border-gray-300 px-3 text-sm text-black bg-white"
+            >
+              <option value="all">All Stores</option>
+              {locations.map((l) => <option key={l.id} value={l.id}>{l.name.replace("Proven Power - ", "")}</option>)}
+            </select>
+          )}
           <select
             value={zoneFilter}
             onChange={(e) => setZoneFilter(e.target.value)}
@@ -303,13 +332,13 @@ export default function AdminWinterStoragePage() {
         </div>
 
       {/* ── New Requests Banner ── */}
-      {!isLoading && signups.filter((s) => s.status === "requested").length > 0 && (
+      {!isLoading && visibleSignups.filter((s) => s.status === "requested").length > 0 && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex flex-col gap-2">
           <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">
-            {signups.filter((s) => s.status === "requested").length} New Request{signups.filter((s) => s.status === "requested").length !== 1 ? "s" : ""} — Needs Review
+            {visibleSignups.filter((s) => s.status === "requested").length} New Request{visibleSignups.filter((s) => s.status === "requested").length !== 1 ? "s" : ""} — Needs Review
           </p>
           <div className="flex flex-col gap-2">
-            {signups.filter((s) => s.status === "requested").map((s) => (
+            {visibleSignups.filter((s) => s.status === "requested").map((s) => (
               <div key={s.id} className="bg-white rounded-xl border border-amber-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -648,6 +677,16 @@ export default function AdminWinterStoragePage() {
 
             <div className="px-6 py-5 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
               {/* Customer info */}
+              {canSwitchStores && (
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1">Store <span className="text-red-500">*</span></label>
+                  <select value={manualForm.locationId} onChange={(e) => setManualForm((f) => ({ ...f, locationId: e.target.value }))}
+                    className="w-full min-h-10 rounded-lg border border-gray-300 px-3 text-black text-sm bg-white">
+                    <option value="">— Select store —</option>
+                    {locations.map((l) => <option key={l.id} value={l.id}>{l.name.replace("Proven Power - ", "")}</option>)}
+                  </select>
+                </div>
+              )}
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer Info</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">

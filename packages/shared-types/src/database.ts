@@ -806,6 +806,7 @@ export interface Database {
           requested_pickup_date: string | null;
           dropoff_calendar_day_id: string | null;
           pickup_calendar_day_id: string | null;
+          dealership_location_id: string | null;
           winterization_bundle_added: boolean;
           agreement_signed_at: string | null;
           status: WinterStorageStatus;
@@ -832,6 +833,7 @@ export interface Database {
           requested_pickup_date?: string | null;
           dropoff_calendar_day_id?: string | null;
           pickup_calendar_day_id?: string | null;
+          dealership_location_id?: string | null;
           winterization_bundle_added?: boolean;
           agreement_signed_at?: string | null;
           status?: WinterStorageStatus;
