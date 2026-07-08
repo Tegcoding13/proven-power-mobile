@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "../lib/supabase/server";
 import { logOut } from "./(auth)/actions";
+import { HomeClient } from "../components/HomeClient";
 
 
 type NavItem = {
@@ -172,7 +173,7 @@ export default async function StaffHomePage() {
         {/* Welcome */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Good morning, {firstName}.</h1>
+            <HomeClient firstName={firstName} />
             <p className="text-sm text-gray-400 mt-0.5">
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
             </p>
