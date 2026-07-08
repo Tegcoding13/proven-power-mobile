@@ -301,6 +301,7 @@ export default function NewWinterStorageSignupPage() {
       pickup_calendar_day_id: selectedPickupDayId,
       agreement_signed_at: new Date().toISOString(),
       requested_by_profile_id: userData.user.id,
+      dealership_location_id: businessAccount.primary_location_id ?? null,
     });
 
     // Save zip back to business account for future auto-populate

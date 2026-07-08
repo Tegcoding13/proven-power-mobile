@@ -53,6 +53,20 @@ export default function PartsQueuePage() {
       <AdminPageHeader title="Parts Queue" />
       <div className="max-w-4xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
 
+      {/* Shop.Deere.com shortcut */}
+      <a
+        href="https://shop.deere.com/us"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-5 py-4 hover:bg-green-100 transition-colors"
+      >
+        <div>
+          <p className="font-bold text-green-900 text-sm">Order Parts on Shop.Deere.com</p>
+          <p className="text-xs text-green-700 mt-0.5">Browse the full John Deere parts catalog, check stock, and place orders</p>
+        </div>
+        <span className="text-green-700 text-lg shrink-0 ml-4">↗</span>
+      </a>
+
       {canSwitchStores && (
         <div className="flex flex-wrap gap-2">
           <button
