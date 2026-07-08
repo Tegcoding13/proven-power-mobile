@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import type { WinterStorageSignup, Equipment } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
@@ -40,6 +40,9 @@ export default function WinterStorageListPage() {
   const { businessAccount, isLoading: isLoadingAccount } = useBusinessAccount();
   const [signups, setSignups] = useState<SignupWithEquipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const reload = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     if (!businessAccount) return;
@@ -62,7 +65,7 @@ export default function WinterStorageListPage() {
       })));
       setIsLoading(false);
     })();
-  }, [businessAccount]);
+  }, [businessAccount, refreshKey]);
 
   const active = signups.filter((s) => !["picked_up", "cancelled"].includes(s.status ?? ""));
   const past = signups.filter((s) => ["picked_up", "cancelled"].includes(s.status ?? ""));
@@ -91,7 +94,7 @@ export default function WinterStorageListPage() {
               <section>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Active · {active.length}</p>
                 <div className="flex flex-col gap-3">
-                  {active.map((item) => <StorageCard key={item.id} item={item} />)}
+                  {active.map((item) => <StorageCard key={item.id} item={item} onCancelled={reload} />)}
                 </div>
               </section>
             )}
@@ -99,7 +102,7 @@ export default function WinterStorageListPage() {
               <section>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Past · {past.length}</p>
                 <div className="flex flex-col gap-3 opacity-70">
-                  {past.map((item) => <StorageCard key={item.id} item={item} />)}
+                  {past.map((item) => <StorageCard key={item.id} item={item} onCancelled={reload} />)}
                 </div>
               </section>
             )}
@@ -112,10 +115,21 @@ export default function WinterStorageListPage() {
   );
 }
 
-function StorageCard({ item }: { item: SignupWithEquipment }) {
+function StorageCard({ item, onCancelled }: { item: SignupWithEquipment; onCancelled: () => void }) {
   const style = STATUS_STYLES[item.status ?? "requested"] ?? "bg-gray-100 text-gray-600 ring-1 ring-gray-200";
   const dot = STATUS_DOTS[item.status ?? "requested"];
   const label = STATUS_LABELS[item.status ?? "requested"] ?? item.status;
+  const [confirming, setConfirming] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  async function handleCancel() {
+    setIsCancelling(true);
+    const supabase = createClient();
+    await supabase.from("winter_storage_signups").update({ status: "cancelled" }).eq("id", item.id);
+    setIsCancelling(false);
+    setConfirming(false);
+    onCancelled();
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-transparent overflow-hidden flex">
@@ -144,6 +158,33 @@ function StorageCard({ item }: { item: SignupWithEquipment }) {
             {label}
           </span>
         </div>
+
+        {item.status === "requested" && !confirming && (
+          <button
+            onClick={() => setConfirming(true)}
+            className="mt-3 text-xs font-semibold text-red-500 hover:text-red-700 transition-colors"
+          >
+            Cancel request
+          </button>
+        )}
+        {confirming && (
+          <div className="mt-3 flex items-center gap-3 flex-wrap">
+            <p className="text-xs text-gray-600">Are you sure you want to cancel?</p>
+            <button
+              onClick={handleCancel}
+              disabled={isCancelling}
+              className="text-xs font-bold text-red-600 hover:text-red-800 disabled:opacity-50 transition-colors"
+            >
+              {isCancelling ? "Cancelling…" : "Yes, cancel"}
+            </button>
+            <button
+              onClick={() => setConfirming(false)}
+              className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Keep it
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
