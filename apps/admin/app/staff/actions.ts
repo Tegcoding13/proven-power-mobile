@@ -70,9 +70,10 @@ export async function inviteStaff(
 
   const admin = createServiceRoleClient();
 
+  const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL ?? "";
   const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName },
-    redirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? ""}/login`,
+    redirectTo: `${adminUrl}/auth/callback?next=/auth/set-password`,
   });
 
   if (inviteErr) return inviteErr.message;

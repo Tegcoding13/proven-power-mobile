@@ -16,6 +16,7 @@ function LoginForm() {
   const [error, formAction, isPending] = useActionState(logIn, null);
   const searchParams = useSearchParams();
   const rejectedAsNonStaff = searchParams.get("error") === "not_staff";
+  const inviteExpired = searchParams.get("error") === "invite_expired";
 
   return (
     <div className="flex flex-1 items-center justify-center px-4">
@@ -23,9 +24,12 @@ function LoginForm() {
         <h1 className="text-3xl font-bold text-green-700">Proven Power</h1>
         <h2 className="text-xl text-black">Staff Login</h2>
 
-        {rejectedAsNonStaff ? (
+        {rejectedAsNonStaff && (
           <p className="text-sm text-red-600">That account isn&apos;t a staff account.</p>
-        ) : null}
+        )}
+        {inviteExpired && (
+          <p className="text-sm text-red-600">That invite link has expired or already been used. Ask a manager to send a new one.</p>
+        )}
 
         <input
           name="email"
