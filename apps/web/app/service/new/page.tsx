@@ -34,6 +34,7 @@ export default function NewServiceRequestPage() {
 
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
   const [equipmentId, setEquipmentId] = useState<string>("");
+  const [isLoadingEquipment, setIsLoadingEquipment] = useState(true);
   const [requestType, setRequestType] = useState<ServiceRequestType>("drop_off");
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [description, setDescription] = useState("");
@@ -43,9 +44,14 @@ export default function NewServiceRequestPage() {
 
   useEffect(() => {
     if (!businessAccount) return;
+    setIsLoadingEquipment(true);
     createClient().from("equipment").select("*")
       .eq("business_account_id", businessAccount.id).is("deleted_at", null)
-      .then(({ data }) => { setEquipmentList(data ?? []); if (data?.[0]) setEquipmentId(data[0].id); });
+      .then(({ data }) => {
+        setEquipmentList(data ?? []);
+        if (data?.[0]) setEquipmentId(data[0].id);
+        setIsLoadingEquipment(false);
+      });
   }, [businessAccount]);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -84,7 +90,7 @@ export default function NewServiceRequestPage() {
     router.replace(`/service/${created.id}`);
   }
 
-  const canSubmit = (description.trim() || selectedServices.length > 0) && equipmentId && !isSubmitting && !isLoadingAccount;
+  const canSubmit = (description.trim() || selectedServices.length > 0) && equipmentId && !isSubmitting && !isLoadingAccount && !isLoadingEquipment;
 
   return (
     <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
@@ -92,8 +98,19 @@ export default function NewServiceRequestPage() {
 
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto w-full px-4 py-6 flex flex-col gap-4">
 
-        {equipmentList.length > 0 && (
-          <Section label="Equipment">
+        <Section label="Equipment">
+          {isLoadingAccount || isLoadingEquipment ? (
+            <div className="flex gap-2">
+              <div className="h-10 w-32 rounded-xl bg-gray-100 animate-pulse" />
+              <div className="h-10 w-24 rounded-xl bg-gray-100 animate-pulse" />
+            </div>
+          ) : equipmentList.length === 0 ? (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+              No equipment added yet.{" "}
+              <a href="/garage/new" className="font-semibold underline">Add equipment in My Garage</a>
+              {" "}before submitting a service request.
+            </div>
+          ) : (
             <div className="flex flex-wrap gap-2">
               {equipmentList.map((eq) => (
                 <button type="button" key={eq.id} onClick={() => setEquipmentId(eq.id)}
@@ -102,8 +119,8 @@ export default function NewServiceRequestPage() {
                 </button>
               ))}
             </div>
-          </Section>
-        )}
+          )}
+        </Section>
 
         <Section label="Request Type">
           <div className="grid grid-cols-2 gap-3">
@@ -155,7 +172,10 @@ export default function NewServiceRequestPage() {
 
         <button type="submit" disabled={!canSubmit}
           className="h-14 rounded-xl bg-[#1a3d2b] text-white font-bold text-base disabled:opacity-40 hover:bg-[#0f2419] transition-colors shadow-sm">
-          {isSubmitting ? "Submitting…" : isLoadingAccount ? "Loading…" : "Submit Service Request"}
+          {isSubmitting ? "Submitting…"
+            : (isLoadingAccount || isLoadingEquipment) ? "Loading…"
+            : !equipmentId ? "Add equipment first"
+            : "Submit Service Request"}
         </button>
       </form>
     </div>
