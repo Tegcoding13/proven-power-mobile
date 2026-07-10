@@ -16,6 +16,33 @@ export default async function AccountPage() {
     ? await supabase.from("profiles").select("*").eq("id", userId).single()
     : { data: null };
 
+  // Fetch home store for display
+  let homeStoreName: string | null = null;
+  if (userId) {
+    const { data: membership } = await supabase
+      .from("business_account_members")
+      .select("business_account_id")
+      .eq("profile_id", userId)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle();
+    if (membership) {
+      const { data: account } = await supabase
+        .from("business_accounts")
+        .select("primary_location_id")
+        .eq("id", membership.business_account_id)
+        .single();
+      if (account?.primary_location_id) {
+        const { data: loc } = await supabase
+          .from("dealership_locations")
+          .select("name")
+          .eq("id", account.primary_location_id)
+          .single();
+        homeStoreName = loc?.name?.replace("Proven Power - ", "") ?? null;
+      }
+    }
+  }
+
   const settingsRows = [
     { label: "Notification Preferences", comingSoon: true },
     { label: "Payment Methods", comingSoon: true },
@@ -34,6 +61,22 @@ export default async function AccountPage() {
         </div>
         <p className="text-xl font-bold text-black">{profile?.full_name ?? "Your Account"}</p>
       </div>
+
+      {/* Home store — affects where service/parts/storage requests are routed */}
+      <Link
+        href="/locations"
+        className="bg-white rounded-[20px] px-5 py-4 flex items-center justify-between"
+        style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+      >
+        <div>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">My Home Store</p>
+          <p className="text-base font-bold text-[#1a3d2b]">
+            {homeStoreName ?? "Not set — tap to choose"}
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">Requests are sent to this location</p>
+        </div>
+        <span className="text-gray-400 text-lg ml-3">›</span>
+      </Link>
 
       <div className="bg-white rounded-[20px] overflow-hidden" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
         {settingsRows.map((row, index) =>
