@@ -51,6 +51,20 @@ export default function PartsListPage() {
       <PageHeader title="Parts Store" action={{ href: "/parts/new", label: "+ Request Parts" }} />
 
       <div className="max-w-2xl mx-auto w-full px-4 py-6 flex flex-col gap-6">
+
+        <a
+          href="https://shop.deere.com/us"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between rounded-2xl border border-green-200 bg-green-50 px-5 py-4 hover:bg-green-100 transition-colors"
+        >
+          <div>
+            <p className="font-bold text-green-900 text-sm">Order Parts on Shop.Deere.com</p>
+            <p className="text-xs text-green-700 mt-0.5">Browse the full John Deere parts catalog, check stock, and place orders</p>
+          </div>
+          <span className="text-green-700 text-lg shrink-0 ml-4">↗</span>
+        </a>
+
         <div className="relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
