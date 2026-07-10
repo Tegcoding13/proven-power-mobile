@@ -4,6 +4,35 @@
 -- called automatically to link their history to their business account.
 
 -- ─────────────────────────────────────────────────────────────
+-- 0. Ensure aspen_customer_imports exists (created in 0011;
+--    guard here so this migration is safe to run standalone)
+-- ─────────────────────────────────────────────────────────────
+create table if not exists aspen_customer_imports (
+  id uuid primary key default gen_random_uuid(),
+  aspen_customer_id text not null unique,
+  phone text not null,
+  full_name text,
+  email text,
+  business_account_id uuid not null references business_accounts(id) on delete cascade,
+  claimed_by_profile_id uuid references profiles(id),
+  claimed_at timestamptz,
+  imported_at timestamptz not null default now(),
+  raw_payload jsonb
+);
+
+create index if not exists aspen_customer_imports_phone_idx on aspen_customer_imports (phone) where claimed_at is null;
+alter table aspen_customer_imports enable row level security;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies where tablename = 'aspen_customer_imports' and policyname = 'staff manage aspen imports'
+  ) then
+    create policy "staff manage aspen imports" on aspen_customer_imports for all
+      using (public.is_staff()) with check (public.is_staff());
+  end if;
+end $$;
+
+-- ─────────────────────────────────────────────────────────────
 -- 1. Track Aspen origin on equipment rows (added to live table)
 -- ─────────────────────────────────────────────────────────────
 alter table equipment
@@ -41,8 +70,12 @@ create table if not exists aspen_equipment_imports (
 create index if not exists aspen_equipment_customer_idx on aspen_equipment_imports (aspen_customer_id);
 
 alter table aspen_equipment_imports enable row level security;
-create policy "staff manage aspen equipment imports" on aspen_equipment_imports
-  for all using (public.is_staff()) with check (public.is_staff());
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename = 'aspen_equipment_imports' and policyname = 'staff manage aspen equipment imports') then
+    create policy "staff manage aspen equipment imports" on aspen_equipment_imports
+      for all using (public.is_staff()) with check (public.is_staff());
+  end if;
+end $$;
 
 -- ─────────────────────────────────────────────────────────────
 -- 3. Invoice / order history
@@ -72,15 +105,16 @@ create index if not exists aspen_invoices_date_idx on aspen_invoices (invoice_da
 
 alter table aspen_invoices enable row level security;
 
--- Customers see their own invoices; staff see all
-create policy "members read own invoices" on aspen_invoices
-  for select
-  using (
-    business_account_id is not null
-    and public.business_account_role(business_account_id) is not null
-  );
-create policy "staff manage aspen invoices" on aspen_invoices
-  for all using (public.is_staff()) with check (public.is_staff());
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename = 'aspen_invoices' and policyname = 'members read own invoices') then
+    create policy "members read own invoices" on aspen_invoices for select
+      using (business_account_id is not null and public.business_account_role(business_account_id) is not null);
+  end if;
+  if not exists (select 1 from pg_policies where tablename = 'aspen_invoices' and policyname = 'staff manage aspen invoices') then
+    create policy "staff manage aspen invoices" on aspen_invoices
+      for all using (public.is_staff()) with check (public.is_staff());
+  end if;
+end $$;
 
 -- ─────────────────────────────────────────────────────────────
 -- 4. Service history (historical work orders from Aspen)
@@ -115,14 +149,16 @@ create index if not exists aspen_service_history_date_idx on aspen_service_histo
 
 alter table aspen_service_history enable row level security;
 
-create policy "members read own service history" on aspen_service_history
-  for select
-  using (
-    business_account_id is not null
-    and public.business_account_role(business_account_id) is not null
-  );
-create policy "staff manage aspen service history" on aspen_service_history
-  for all using (public.is_staff()) with check (public.is_staff());
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename = 'aspen_service_history' and policyname = 'members read own service history') then
+    create policy "members read own service history" on aspen_service_history for select
+      using (business_account_id is not null and public.business_account_role(business_account_id) is not null);
+  end if;
+  if not exists (select 1 from pg_policies where tablename = 'aspen_service_history' and policyname = 'staff manage aspen service history') then
+    create policy "staff manage aspen service history" on aspen_service_history
+      for all using (public.is_staff()) with check (public.is_staff());
+  end if;
+end $$;
 
 -- ─────────────────────────────────────────────────────────────
 -- 5. Promotion function — called when a customer is claimed
