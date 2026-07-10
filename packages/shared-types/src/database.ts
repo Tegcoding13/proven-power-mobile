@@ -244,6 +244,7 @@ export interface Database {
           powergard_expires_at?: string | null;
           powergard_plan_name?: string | null;
           status?: EquipmentStatus;
+          deleted_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["equipment"]["Insert"]>;
         Relationships: [];
