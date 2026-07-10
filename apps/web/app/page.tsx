@@ -30,6 +30,23 @@ export default async function HomePage() {
     ? await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("is_read", false)
     : { count: 0 };
 
+  let homeStoreName: string | null = null;
+  if (membership?.business_account_id) {
+    const { data: account } = await supabase
+      .from("business_accounts")
+      .select("primary_location_id")
+      .eq("id", membership.business_account_id)
+      .single();
+    if (account?.primary_location_id) {
+      const { data: loc } = await supabase
+        .from("dealership_locations")
+        .select("name")
+        .eq("id", account.primary_location_id)
+        .single();
+      homeStoreName = loc?.name?.replace("Proven Power - ", "") ?? null;
+    }
+  }
+
   let equipmentCount = 0;
   let activeServiceCount = 0;
   let nextTask: { task_name: string; due_at_date: string | null; due_at_hours: number | null; equipmentLabel: string } | null = null;
@@ -121,6 +138,18 @@ export default async function HomePage() {
           <div className="mb-5">
             <p className="text-white/50 text-xs font-medium tracking-widest uppercase">Welcome back</p>
             <p className="text-white text-2xl font-bold mt-0.5">{firstName}</p>
+            {homeStoreName ? (
+              <Link href="/locations" className="inline-flex items-center gap-1.5 mt-1.5">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/50">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span className="text-white/60 text-xs font-medium">{homeStoreName}</span>
+              </Link>
+            ) : (
+              <Link href="/locations" className="inline-flex items-center gap-1 mt-1.5">
+                <span className="text-white/40 text-xs">Set home store ›</span>
+              </Link>
+            )}
           </div>
 
           {/* Stat cards — white, bleed below header */}

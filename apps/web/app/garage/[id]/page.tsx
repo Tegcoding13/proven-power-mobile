@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Equipment, EquipmentHourReading, EquipmentDocument, MaintenanceTask } from "@proven-power/shared-types";
 import { createClient } from "../../../lib/supabase/client";
 import { useBusinessAccount } from "../../../lib/business-account";
@@ -55,8 +56,12 @@ const TASK_STATUS_STYLE: Record<string, string> = {
 
 export default function EquipmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const { businessAccount, isLoading: isLoadingAccount } = useBusinessAccount();
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [readings, setReadings] = useState<EquipmentHourReading[]>([]);
   const [photoUrls, setPhotoUrls] = useState<{ id: string; url: string }[]>([]);
@@ -127,6 +132,19 @@ export default function EquipmentDetailPage({ params }: { params: Promise<{ id: 
     await uploadEquipmentDocument({ businessAccountId: businessAccount.id, equipmentId: id, file, docType: "other", uploadedByProfileId: userData.user.id });
     event.target.value = "";
     reload();
+  }
+
+  async function handleRemove() {
+    setIsRemoving(true);
+    setRemoveError(null);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("equipment")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
+    setIsRemoving(false);
+    if (error) { setRemoveError("Could not remove — please try again."); return; }
+    router.replace("/garage");
   }
 
   async function handleOpenDocument(doc: EquipmentDocument) {
@@ -281,6 +299,40 @@ export default function EquipmentDetailPage({ params }: { params: Promise<{ id: 
             </div>
           )}
         </Section>
+
+        {/* remove from garage */}
+        <div className="bg-white rounded-2xl shadow-sm p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Remove Equipment</p>
+          {!confirmRemove ? (
+            <button
+              onClick={() => setConfirmRemove(true)}
+              className="mt-1 text-sm font-semibold text-red-500 hover:text-red-700 transition-colors text-left"
+            >
+              Remove from My Garage
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-gray-600">Sold or got rid of it? This removes it from your garage and service history.</p>
+              <div className="flex items-center gap-4 flex-wrap">
+                <button
+                  onClick={handleRemove}
+                  disabled={isRemoving}
+                  className="text-sm font-bold text-red-600 hover:text-red-800 disabled:opacity-50 transition-colors"
+                >
+                  {isRemoving ? "Removing…" : "Yes, remove it"}
+                </button>
+                <button
+                  onClick={() => { setConfirmRemove(false); setRemoveError(null); }}
+                  className="text-sm font-semibold text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  Keep it
+                </button>
+              </div>
+              {removeError && <p className="text-xs text-red-500">{removeError}</p>}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
