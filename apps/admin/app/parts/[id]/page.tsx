@@ -101,7 +101,7 @@ export default function AdminPartsRequestDetailPage({ params }: { params: Promis
                 request.status === status ? "bg-green-600 text-white" : "bg-gray-100 text-black"
               }`}
             >
-              {status.replace("_", " ")}
+              {status.replace(/_/g, " ")}
             </button>
           ))}
         </div>
