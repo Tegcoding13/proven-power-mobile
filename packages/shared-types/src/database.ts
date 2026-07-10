@@ -588,6 +588,34 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["service_request_status_history"]["Insert"]>;
         Relationships: [];
       };
+      parts_inventory: {
+        Row: {
+          id: string;
+          dealership_location_id: string | null;
+          part_number: string;
+          description: string | null;
+          quantity_on_hand: number;
+          bin_location: string | null;
+          unit_price: number | null;
+          aspen_part_id: string | null;
+          last_synced_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          dealership_location_id?: string | null;
+          part_number: string;
+          description?: string | null;
+          quantity_on_hand?: number;
+          bin_location?: string | null;
+          unit_price?: number | null;
+          aspen_part_id?: string | null;
+          last_synced_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["parts_inventory"]["Insert"]>;
+        Relationships: [];
+      };
       parts_requests: {
         Row: {
           id: string;
@@ -974,6 +1002,7 @@ export type NotificationRule = Database["public"]["Tables"]["notification_rules"
 export type ServiceRequest = Database["public"]["Tables"]["service_requests"]["Row"];
 export type ServiceRequestMedia = Database["public"]["Tables"]["service_request_media"]["Row"];
 export type ServiceRequestStatusHistory = Database["public"]["Tables"]["service_request_status_history"]["Row"];
+export type PartsInventory = Database["public"]["Tables"]["parts_inventory"]["Row"];
 export type PartsRequest = Database["public"]["Tables"]["parts_requests"]["Row"];
 export type PartsRequestMedia = Database["public"]["Tables"]["parts_request_media"]["Row"];
 export type MessageThread = Database["public"]["Tables"]["message_threads"]["Row"];

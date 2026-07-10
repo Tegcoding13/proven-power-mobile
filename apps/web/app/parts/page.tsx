@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import type { PartsRequest } from "@proven-power/shared-types";
+import type { PartsInventory, PartsRequest } from "@proven-power/shared-types";
 import { createClient } from "../../lib/supabase/client";
 import { useBusinessAccount } from "../../lib/business-account";
 import { StatusBadge } from "../../components/StatusBadge";
@@ -20,6 +20,123 @@ function relativeDate(iso: string) {
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days} days ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+type InventoryResult = PartsInventory & { locationName: string };
+
+function InventoryLookup() {
+  const [partNumber, setPartNumber] = useState("");
+  const [results, setResults] = useState<InventoryResult[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const search = useCallback(async (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed) { setResults(null); return; }
+    setIsSearching(true);
+    const supabase = createClient();
+    const { data: rows } = await supabase
+      .from("parts_inventory")
+      .select("*, dealership_locations(name)")
+      .ilike("part_number", `%${trimmed}%`)
+      .order("part_number", { ascending: true })
+      .limit(20);
+
+    const mapped: InventoryResult[] = (rows ?? []).map((r) => ({
+      ...r,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      locationName: (r as any).dealership_locations?.name?.replace("Proven Power - ", "") ?? "Unknown location",
+    }));
+    setResults(mapped);
+    setIsSearching(false);
+  }, []);
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setPartNumber(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => search(val), 400);
+  }
+
+  const inStock = results?.filter((r) => r.quantity_on_hand > 0) ?? [];
+  const outOfStock = results?.filter((r) => r.quantity_on_hand <= 0) ?? [];
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-5 pt-5 pb-4">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Check Our Inventory</p>
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          {isSearching && (
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+          )}
+          <input
+            type="text"
+            placeholder="Enter part number…"
+            value={partNumber}
+            onChange={handleChange}
+            className="w-full h-11 pl-9 pr-9 rounded-xl border border-gray-200 bg-gray-50/50 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a3d2b]/30"
+          />
+        </div>
+      </div>
+
+      {results !== null && (
+        <div className="border-t border-gray-100">
+          {results.length === 0 ? (
+            <div className="px-5 py-4 text-sm text-gray-500">
+              No matching parts found.{" "}
+              <Link href="/parts/new" className="font-semibold text-[#1a3d2b] underline">Submit a request</Link>
+              {" "}and our team will source it.
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {inStock.map((r) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 px-5 py-3.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-gray-900">{r.part_number}</p>
+                    {r.description && <p className="text-xs text-gray-500 mt-0.5 truncate">{r.description}</p>}
+                    <p className="text-xs text-gray-400 mt-0.5">{r.locationName}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 ring-1 ring-green-200 px-2.5 py-1 text-xs font-semibold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                      {r.quantity_on_hand} in stock
+                    </span>
+                    {r.unit_price != null && (
+                      <p className="text-xs text-gray-400 mt-1">${r.unit_price.toFixed(2)}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {outOfStock.map((r) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 px-5 py-3.5 opacity-60">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-gray-900">{r.part_number}</p>
+                    {r.description && <p className="text-xs text-gray-500 mt-0.5 truncate">{r.description}</p>}
+                    <p className="text-xs text-gray-400 mt-0.5">{r.locationName}</p>
+                  </div>
+                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-gray-100 text-gray-500 ring-1 ring-gray-200 px-2.5 py-1 text-xs font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                    Out of stock
+                  </span>
+                </div>
+              ))}
+              {inStock.length === 0 && outOfStock.length > 0 && (
+                <div className="px-5 py-3 text-xs text-gray-500">
+                  Not in stock at either location.{" "}
+                  <Link href="/parts/new" className="font-semibold text-[#1a3d2b] underline">Request an order</Link>.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function PartsListPage() {
@@ -65,16 +182,21 @@ export default function PartsListPage() {
           <span className="text-green-700 text-lg shrink-0 ml-4">↗</span>
         </a>
 
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            placeholder="Search by description or status…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full h-11 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a3d2b]/30 shadow-sm"
-          />
+        <InventoryLookup />
+
+        <div>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">My Requests</p>
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              placeholder="Filter my requests…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full h-11 pl-9 pr-4 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a3d2b]/30 shadow-sm"
+            />
+          </div>
         </div>
 
         {isLoadingAccount || isLoading ? (
@@ -82,8 +204,7 @@ export default function PartsListPage() {
             {[1,2].map((i) => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse shadow-sm" />)}
           </div>
         ) : requests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-4 text-3xl">🛒</div>
+          <div className="flex flex-col items-center justify-center py-10 text-center">
             <p className="font-semibold text-gray-900">No parts requests yet</p>
             <p className="text-sm text-gray-500 mt-1">Need a part? Submit a request and our team will get back to you.</p>
             <Link href="/parts/new" className="mt-4 bg-[#1a3d2b] text-white rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-[#0f2419] transition-colors">
