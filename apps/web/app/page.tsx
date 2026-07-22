@@ -8,6 +8,7 @@ const QUICK_ACTIONS = [
   { href: "/messages", label: "Messages", subtitle: "Talk to us", icon: "💬" },
   { href: "/service", label: "Service History", subtitle: "Past & active", icon: "📋" },
   { href: "/winter-storage", label: "Winter Storage", subtitle: "Sign up", icon: "❄️" },
+  { href: "/invoices", label: "Invoices", subtitle: "Payment history", icon: "📄" },
   { href: "/locations", label: "Locations", subtitle: "Hours & contact", icon: "📍" },
   { href: "/inventory", label: "Inventory", subtitle: "New & used units", icon: "📦" },
   { href: "/deals", label: "Deals & Offers", subtitle: "Current promotions", icon: "🏷️" },
@@ -49,7 +50,7 @@ export default async function HomePage() {
 
   let equipmentCount = 0;
   let activeServiceCount = 0;
-  let nextTask: { task_name: string; due_at_date: string | null; due_at_hours: number | null; equipmentLabel: string } | null = null;
+  let nextTask: { task_name: string; due_at_date: string | null; due_at_hours: number | null; equipmentLabel: string; status: string } | null = null;
   const businessAccountId = membership?.business_account_id;
 
   if (businessAccountId) {
@@ -79,7 +80,7 @@ export default async function HomePage() {
         .from("maintenance_tasks")
         .select("*")
         .in("equipment_id", ids)
-        .in("status", ["upcoming", "due", "overdue"])
+        .in("status", ["due", "overdue"])
         .order("due_at_date", { ascending: true, nullsFirst: false })
         .limit(1);
 
@@ -91,6 +92,7 @@ export default async function HomePage() {
           due_at_date: task.due_at_date,
           due_at_hours: task.due_at_hours,
           equipmentLabel: equipmentRow?.nickname || equipmentRow?.model || "Your equipment",
+          status: task.status,
         };
       }
     }
@@ -180,34 +182,32 @@ export default async function HomePage() {
               <span className="text-xs text-gray-700">{action.subtitle}</span>
             </Link>
           ))}
-          <div
-            className="bg-white rounded-2xl p-3 flex flex-col gap-1 opacity-70"
-            style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
-          >
-            <span className="text-2xl">📄</span>
-            <span className="font-bold text-black text-sm">Invoices</span>
-            <span className="text-xs text-gray-700">Coming soon</span>
-          </div>
         </div>
 
         {nextTask ? (
           <div>
-            <h2 className="text-lg font-bold text-black mb-2">Upcoming Service</h2>
-            <div className="bg-white rounded-[20px] p-5 flex flex-col gap-1" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
+            <h2 className="text-lg font-bold text-black mb-2">
+              {nextTask.status === "overdue" ? "⚠️ Maintenance Overdue" : "Maintenance Due"}
+            </h2>
+            <div
+              className={`rounded-[20px] p-5 flex flex-col gap-1 ${nextTask.status === "overdue" ? "bg-red-50 border border-red-200" : "bg-white"}`}
+              style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+            >
               <p className="font-bold text-black">{nextTask.equipmentLabel}</p>
               <p className="text-sm text-gray-700">{nextTask.task_name}</p>
-              <p className="text-sm font-semibold text-amber-700">
+              <p className={`text-sm font-semibold ${nextTask.status === "overdue" ? "text-red-600" : "text-amber-700"}`}>
+                {nextTask.status === "overdue" ? "Overdue — " : "Due "}
                 {nextTask.due_at_date
-                  ? `Due ${new Date(nextTask.due_at_date).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}`
+                  ? new Date(nextTask.due_at_date).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })
                   : nextTask.due_at_hours != null
-                    ? `Due at ${nextTask.due_at_hours} hrs`
-                    : "Due soon"}
+                    ? `at ${nextTask.due_at_hours} hrs`
+                    : "soon"}
               </p>
               <Link
                 href="/service/new"
-                className="self-start mt-2 min-h-11 flex items-center rounded-lg bg-green-600 px-5 font-semibold text-white"
+                className={`self-start mt-2 min-h-11 flex items-center rounded-lg px-5 font-semibold text-white ${nextTask.status === "overdue" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} transition-colors`}
               >
-                Schedule
+                Schedule Service
               </Link>
             </div>
           </div>
