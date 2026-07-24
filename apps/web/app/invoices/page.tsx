@@ -8,7 +8,9 @@ import { createClient } from "../../lib/supabase/client";
 import { useBusinessAccount } from "../../lib/business-account";
 import { PageHeader } from "../../components/PageHeader";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null;
 
 type LineItem = {
   part_number?: string;
@@ -203,17 +205,26 @@ function InvoiceCard({
           {canPay && !clientSecret && (
             <div className="mt-4">
               {payError && <p className="text-xs text-red-600 mb-2">{payError}</p>}
-              <button
-                onClick={handlePayNow}
-                disabled={isLoadingPay}
-                className="w-full min-h-11 rounded-xl bg-[#1a3d2b] text-white font-semibold text-sm disabled:opacity-50"
-              >
-                {isLoadingPay ? "Loading…" : `Pay ${fmt(invoice.balance_due ?? invoice.total_amount)}`}
-              </button>
+              {stripePromise ? (
+                <button
+                  onClick={handlePayNow}
+                  disabled={isLoadingPay}
+                  className="w-full min-h-11 rounded-xl bg-[#1a3d2b] text-white font-semibold text-sm disabled:opacity-50"
+                >
+                  {isLoadingPay ? "Loading…" : `Pay ${fmt(invoice.balance_due ?? invoice.total_amount)}`}
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full min-h-11 rounded-xl bg-gray-100 text-gray-400 font-semibold text-sm cursor-not-allowed"
+                >
+                  Online Payment Coming Soon
+                </button>
+              )}
             </div>
           )}
 
-          {canPay && clientSecret && (
+          {canPay && clientSecret && stripePromise && (
             <div className="mt-4">
               <Elements
                 stripe={stripePromise}
