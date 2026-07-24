@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { AspenInvoice } from "@proven-power/shared-types";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { createClient } from "../../lib/supabase/client";
 import { useBusinessAccount } from "../../lib/business-account";
 import { PageHeader } from "../../components/PageHeader";
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 type LineItem = {
   part_number?: string;
@@ -38,11 +42,93 @@ function fmtDate(iso: string | null | undefined) {
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function InvoiceCard({ invoice }: { invoice: AspenInvoice }) {
+// ----- Payment form (rendered inside <Elements>) -----
+function CheckoutForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setIsSubmitting(true);
+    setErrorMsg(null);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: `${window.location.origin}/invoices?paid=1` },
+      redirect: "if_required",
+    });
+
+    if (error) {
+      setErrorMsg(error.message ?? "Payment failed — please try again.");
+      setIsSubmitting(false);
+    } else {
+      onSuccess();
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-4">
+      <PaymentElement />
+      {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={!stripe || isSubmitting}
+          className="flex-1 min-h-11 rounded-xl bg-[#1a3d2b] text-white font-semibold text-sm disabled:opacity-50"
+        >
+          {isSubmitting ? "Processing…" : "Pay Now"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 min-h-11 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// ----- Invoice card -----
+function InvoiceCard({
+  invoice,
+  onPaid,
+}: {
+  invoice: AspenInvoice;
+  onPaid: (id: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isLoadingPay, setIsLoadingPay] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+
   const lineItems = (invoice.line_items ?? []) as LineItem[];
   const style = STATUS_STYLES[invoice.status] ?? STATUS_STYLES.unknown;
   const label = STATUS_LABELS[invoice.status] ?? invoice.status;
+  const canPay = ["unpaid", "partial"].includes(invoice.status);
+
+  const handlePayNow = useCallback(async () => {
+    setIsLoadingPay(true);
+    setPayError(null);
+    try {
+      const res = await fetch("/api/stripe/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId: invoice.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Could not start payment");
+      setClientSecret(json.clientSecret);
+    } catch (err: unknown) {
+      setPayError(err instanceof Error ? err.message : "Could not start payment");
+    } finally {
+      setIsLoadingPay(false);
+    }
+  }, [invoice.id]);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -77,7 +163,7 @@ function InvoiceCard({ invoice }: { invoice: AspenInvoice }) {
       </button>
 
       {expanded && (
-        <div className="border-t border-gray-100 px-5 pb-4">
+        <div className="border-t border-gray-100 px-5 pb-5">
           {lineItems.length > 0 ? (
             <table className="w-full text-xs mt-3">
               <thead>
@@ -113,12 +199,43 @@ function InvoiceCard({ invoice }: { invoice: AspenInvoice }) {
           ) : (
             <p className="text-xs text-gray-400 mt-3 text-center">No line item detail available</p>
           )}
+
+          {canPay && !clientSecret && (
+            <div className="mt-4">
+              {payError && <p className="text-xs text-red-600 mb-2">{payError}</p>}
+              <button
+                onClick={handlePayNow}
+                disabled={isLoadingPay}
+                className="w-full min-h-11 rounded-xl bg-[#1a3d2b] text-white font-semibold text-sm disabled:opacity-50"
+              >
+                {isLoadingPay ? "Loading…" : `Pay ${fmt(invoice.balance_due ?? invoice.total_amount)}`}
+              </button>
+            </div>
+          )}
+
+          {canPay && clientSecret && (
+            <div className="mt-4">
+              <Elements
+                stripe={stripePromise}
+                options={{
+                  clientSecret,
+                  appearance: { theme: "stripe", variables: { colorPrimary: "#1a3d2b" } },
+                }}
+              >
+                <CheckoutForm
+                  onSuccess={() => { setClientSecret(null); onPaid(invoice.id); }}
+                  onCancel={() => setClientSecret(null)}
+                />
+              </Elements>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
+// ----- Page -----
 export default function InvoicesPage() {
   const { businessAccount, isLoading: isLoadingAccount } = useBusinessAccount();
   const [invoices, setInvoices] = useState<AspenInvoice[]>([]);
@@ -133,6 +250,12 @@ export default function InvoicesPage() {
       .order("invoice_date", { ascending: false, nullsFirst: false })
       .then(({ data }) => { setInvoices(data ?? []); setIsLoading(false); });
   }, [businessAccount]);
+
+  const handlePaid = useCallback((id: string) => {
+    setInvoices((prev) =>
+      prev.map((inv) => inv.id === id ? { ...inv, status: "paid" as const, balance_due: 0 } : inv)
+    );
+  }, []);
 
   const unpaid = invoices.filter((i) => ["unpaid", "partial"].includes(i.status));
   const paid = invoices.filter((i) => !["unpaid", "partial"].includes(i.status));
@@ -162,7 +285,7 @@ export default function InvoicesPage() {
                   Outstanding · {unpaid.length}
                 </p>
                 <div className="flex flex-col gap-3">
-                  {unpaid.map((inv) => <InvoiceCard key={inv.id} invoice={inv} />)}
+                  {unpaid.map((inv) => <InvoiceCard key={inv.id} invoice={inv} onPaid={handlePaid} />)}
                 </div>
               </section>
             )}
@@ -172,7 +295,7 @@ export default function InvoicesPage() {
                   History · {paid.length}
                 </p>
                 <div className={`flex flex-col gap-3 ${unpaid.length > 0 ? "opacity-80" : ""}`}>
-                  {paid.map((inv) => <InvoiceCard key={inv.id} invoice={inv} />)}
+                  {paid.map((inv) => <InvoiceCard key={inv.id} invoice={inv} onPaid={handlePaid} />)}
                 </div>
               </section>
             )}

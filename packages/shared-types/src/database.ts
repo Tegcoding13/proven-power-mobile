@@ -1007,6 +1007,8 @@ export interface Database {
           imported_at: string;
           last_synced_at: string;
           raw_payload: Record<string, unknown> | null;
+          stripe_payment_intent_id: string | null;
+          stripe_payment_status: string | null;
         };
         Insert: {
           id?: string;
@@ -1022,6 +1024,8 @@ export interface Database {
           dealership_location_id?: string | null;
           line_items?: Record<string, unknown>[] | null;
           raw_payload?: Record<string, unknown> | null;
+          stripe_payment_intent_id?: string | null;
+          stripe_payment_status?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["aspen_invoices"]["Insert"]>;
         Relationships: [];
@@ -1095,6 +1099,11 @@ export interface Database {
       cancel_parts_request: {
         Args: { p_parts_request_id: string };
         Returns: Database["public"]["Tables"]["parts_requests"]["Row"];
+      };
+      send_maintenance_due_notifications: { Args: Record<string, never>; Returns: number };
+      promote_aspen_customer_data: {
+        Args: { p_aspen_customer_id: string; p_business_account_id: string };
+        Returns: undefined;
       };
     };
   };
